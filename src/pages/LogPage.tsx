@@ -1,6 +1,7 @@
 import { ENTRY_TYPES, type EntryTypeCode } from "@shared/entryTypes";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { AiPromptBar } from "@/components/AiPromptBar";
 import { BodyPhotoForm, type BodyPhotoInitialData } from "@/components/forms/BodyPhotoForm";
 import {
   HealthEpisodeForm,
@@ -72,6 +73,12 @@ export function LogPage() {
   const navigate = useNavigate();
   const [selected, setSelected] = useState<EntryTypeCode>("metric");
   const [initialData, setInitialData] = useState<unknown>(null);
+  // Bumped on every AI parse so the form remounts even when the AI picks the
+  // same type that was already selected — `key={id ?? selected}` alone
+  // wouldn't change in that case, and react-hook-form only reads
+  // `defaultValues` on mount, so the new initialData would otherwise be
+  // silently ignored.
+  const [aiFillVersion, setAiFillVersion] = useState(0);
   const [loading, setLoading] = useState(Boolean(id));
   const [loadError, setLoadError] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -99,6 +106,12 @@ export function LogPage() {
 
   const current = ENTRY_TYPES.find((t) => t.code === selected) ?? ENTRY_TYPES[0];
 
+  function handleAiParsed(type: EntryTypeCode, data: unknown) {
+    setSelected(type);
+    setInitialData(data);
+    setAiFillVersion((v) => v + 1);
+  }
+
   async function handleDelete() {
     if (!id) return;
     setDeleting(true);
@@ -114,7 +127,7 @@ export function LogPage() {
   }
 
   return (
-    <div className="flex max-w-lg flex-col gap-4 p-4">
+    <div className={`flex max-w-lg flex-col gap-4 p-4 ${!id ? "pb-24" : ""}`}>
       <Card>
         <CardHeader>
           <CardTitle>{id ? "Editar entrada" : "Nueva entrada"}</CardTitle>
@@ -153,7 +166,7 @@ export function LogPage() {
         </Card>
       )}
       {!loading && !loadError && (
-        <Card key={id ?? selected}>
+        <Card key={`${id ?? selected}:${aiFillVersion}`}>
           <CardContent className="flex flex-col gap-4">
             {renderForm(current.code, id, initialData)}
 
@@ -201,6 +214,8 @@ export function LogPage() {
           </CardContent>
         </Card>
       )}
+
+      {!id && <AiPromptBar onParsed={handleAiParsed} />}
     </div>
   );
 }
