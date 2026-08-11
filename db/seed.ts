@@ -1,6 +1,6 @@
-import { METRIC_DEFINITIONS, WORKOUT_TYPES } from "../shared/metricCatalog";
-import { client, db } from "./client";
-import { metricDefinitions, sources, workoutTypes } from "./schema";
+import { METRIC_DEFINITIONS, WORKOUT_TYPES } from "../shared/metricCatalog.js";
+import { client, db } from "./client.js";
+import { metricDefinitions, sources, workoutTypes } from "./schema/index.js";
 
 async function seed() {
   await db

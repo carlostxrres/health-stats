@@ -12,7 +12,7 @@ import type {
   workoutPhotos,
   workoutSets,
   workouts,
-} from "../db/schema";
+} from "../db/schema/index.js";
 
 export type MetricEntry = typeof metricEntries.$inferSelect;
 

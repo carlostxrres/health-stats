@@ -10,7 +10,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { sources } from "./sources";
+import { sources } from "./sources.js";
 
 // Reference table: every simple time-series indicator the app knows about.
 // Adding a new indicator (VO2Max, blood panel markers, etc.) later is just a

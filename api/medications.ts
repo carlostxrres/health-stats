@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { desc, eq } from "drizzle-orm";
-import { medications } from "../db/schema";
-import { medicationInputSchema } from "../shared/validation";
-import { db } from "./_lib/db";
-import { createHandler } from "./_lib/http";
+import { medications } from "../db/schema/index.js";
+import { medicationInputSchema } from "../shared/validation/index.js";
+import { db } from "./_lib/db.js";
+import { createHandler } from "./_lib/http.js";
 
 async function list(_req: VercelRequest, res: VercelResponse) {
   const rows = await db.query.medications.findMany({

@@ -1,6 +1,6 @@
 import { relations } from "drizzle-orm";
 import { integer, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { sources } from "./sources";
+import { sources } from "./sources.js";
 
 export const workoutTypes = pgTable("workout_types", {
   code: text("code").primaryKey(), // 'strength' | 'running' | 'cycling' | 'walking' | ...

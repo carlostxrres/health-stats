@@ -1,6 +1,6 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
-import { ENTRY_TYPES, type EntryTypeCode } from "../../shared/entryTypes";
+import { ENTRY_TYPES, type EntryTypeCode } from "../../shared/entryTypes.js";
 import {
   BODY_SITE_LABELS,
   BODY_SITES,
@@ -8,8 +8,8 @@ import {
   METRIC_DEFINITIONS,
   WORKOUT_TYPE_CODES,
   WORKOUT_TYPES,
-} from "../../shared/metricCatalog";
-import { EPISODE_TYPE_LABELS, HEALTH_EPISODE_TYPES } from "../../shared/validation";
+} from "../../shared/metricCatalog.js";
+import { EPISODE_TYPE_LABELS, HEALTH_EPISODE_TYPES } from "../../shared/validation/index.js";
 
 // Zod schemas that describe what the AI is allowed to extract from free text,
 // per entry type. These are intentionally separate from shared/validation's

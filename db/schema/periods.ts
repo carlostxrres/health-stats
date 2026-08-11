@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { boolean, check, date, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { sources } from "./sources";
+import { sources } from "./sources.js";
 
 export const sleepSessions = pgTable(
   "sleep_sessions",

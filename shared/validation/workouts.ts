@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { WORKOUT_TYPE_CODES } from "../metricCatalog";
+import { WORKOUT_TYPE_CODES } from "../metricCatalog.js";
 
 export const workoutMetricInputSchema = z.object({
   metricType: z.string().min(1).max(50),

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ENTRY_TYPE_CODES } from "../entryTypes";
+import { ENTRY_TYPE_CODES } from "../entryTypes.js";
 
 export const entriesQuerySchema = z.object({
   type: z.array(z.enum(ENTRY_TYPE_CODES)).optional(),

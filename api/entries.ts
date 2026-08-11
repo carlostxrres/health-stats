@@ -8,12 +8,16 @@ import {
   metricEntries,
   sleepSessions,
   workouts,
-} from "../db/schema";
-import { ENTRY_TYPE_CODES, type EntryTypeCode } from "../shared/entryTypes";
-import { COMPOSITE_METRIC_CODES, METRIC_DEFINITIONS, WORKOUT_TYPES } from "../shared/metricCatalog";
-import { EPISODE_TYPE_LABELS, entriesQuerySchema } from "../shared/validation";
-import { db } from "./_lib/db";
-import { createHandler } from "./_lib/http";
+} from "../db/schema/index.js";
+import { ENTRY_TYPE_CODES, type EntryTypeCode } from "../shared/entryTypes.js";
+import {
+  COMPOSITE_METRIC_CODES,
+  METRIC_DEFINITIONS,
+  WORKOUT_TYPES,
+} from "../shared/metricCatalog.js";
+import { EPISODE_TYPE_LABELS, entriesQuerySchema } from "../shared/validation/index.js";
+import { db } from "./_lib/db.js";
+import { createHandler } from "./_lib/http.js";
 
 const LOOKUPS: { type: EntryTypeCode; query: (id: string) => Promise<unknown | undefined> }[] = [
   {

@@ -1,6 +1,6 @@
 import { relations } from "drizzle-orm";
 import { integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { sources } from "./sources";
+import { sources } from "./sources.js";
 
 export const bodyPhotos = pgTable("body_photos", {
   id: uuid("id").primaryKey().defaultRandom(),

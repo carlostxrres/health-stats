@@ -4,7 +4,7 @@ import {
   BODY_SITES,
   COMPOSITE_METRIC_CODES,
   METRIC_CODES,
-} from "../metricCatalog";
+} from "../metricCatalog.js";
 
 export const metricEntryInputSchema = z
   .object({

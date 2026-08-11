@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { ZodError } from "zod";
-import { requireUser, UnauthorizedError } from "./auth";
+import { requireUser, UnauthorizedError } from "./auth.js";
 
 type Method = "GET" | "POST" | "DELETE" | "PATCH";
 type Handler = (req: VercelRequest, res: VercelResponse) => Promise<void>;

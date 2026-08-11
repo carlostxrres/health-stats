@@ -1,10 +1,10 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { desc, eq } from "drizzle-orm";
-import { metricEntries } from "../db/schema";
-import { METRIC_DEFINITIONS } from "../shared/metricCatalog";
-import { metricEntryInputSchema } from "../shared/validation";
-import { db } from "./_lib/db";
-import { createHandler } from "./_lib/http";
+import { metricEntries } from "../db/schema/index.js";
+import { METRIC_DEFINITIONS } from "../shared/metricCatalog.js";
+import { metricEntryInputSchema } from "../shared/validation/index.js";
+import { db } from "./_lib/db.js";
+import { createHandler } from "./_lib/http.js";
 
 async function list(req: VercelRequest, res: VercelResponse) {
   const metricType = typeof req.query.metricType === "string" ? req.query.metricType : undefined;
