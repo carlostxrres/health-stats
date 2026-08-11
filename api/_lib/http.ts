@@ -10,7 +10,9 @@ type Handler = (req: VercelRequest, res: VercelResponse) => Promise<void>;
 export function createHandler(methods: Partial<Record<Method, Handler>>) {
   return async (req: VercelRequest, res: VercelResponse) => {
     try {
-      await requireUser(req);
+      if (req.method !== "GET") {
+        await requireUser(req);
+      }
 
       const handler = methods[req.method as Method];
       if (!handler) {

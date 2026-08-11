@@ -2,6 +2,11 @@ import { z } from "zod";
 
 export const HEALTH_EPISODE_TYPES = ["injury", "illness"] as const;
 
+export const EPISODE_TYPE_LABELS: Record<(typeof HEALTH_EPISODE_TYPES)[number], string> = {
+  injury: "Lesión",
+  illness: "Enfermedad",
+};
+
 export const healthEpisodeInputSchema = z.object({
   episodeType: z.enum(HEALTH_EPISODE_TYPES),
   title: z.string().min(1).max(200),

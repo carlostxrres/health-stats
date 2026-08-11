@@ -14,7 +14,16 @@ export function localInputToIso(localValue: string): string {
 
 // Default value for a datetime-local input: "now", in local time.
 export function nowAsLocalInputValue(): string {
-  const date = new Date();
+  return isoToLocalInputValue(new Date().toISOString());
+}
+
+// Inverse of localInputToIso: converts an ISO string (with or without
+// offset) into the value <input type="datetime-local"> expects. Works
+// regardless of the input string's offset, because Date normalizes to an
+// absolute instant and the getters below read it back in the browser's
+// local timezone.
+export function isoToLocalInputValue(iso: string): string {
+  const date = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
