@@ -1,13 +1,23 @@
 import { sleepSessionInputSchema } from "@shared/validation";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import { Field } from "@/components/forms/Field";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { apiClient } from "@/lib/api-client";
-import { localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
+import { isoToLocalInputValue, localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
+
+export type SleepSessionInitialData = {
+  wentToBedAt: string;
+  wokeUpAt: string;
+  isNap: boolean;
+  qualityRating: number | null;
+  wakeFeeling: number | null;
+  notes: string | null;
+};
 
 type FormValues = {
   wentToBedAtLocal: string;
@@ -18,7 +28,14 @@ type FormValues = {
   notes: string;
 };
 
-export function SleepSessionForm() {
+export function SleepSessionForm({
+  entryId,
+  initialData,
+}: {
+  entryId?: string;
+  initialData?: SleepSessionInitialData;
+}) {
+  const navigate = useNavigate();
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -29,14 +46,23 @@ export function SleepSessionForm() {
     reset,
     formState: { isSubmitting },
   } = useForm<FormValues>({
-    defaultValues: {
-      wentToBedAtLocal: nowAsLocalInputValue(),
-      wokeUpAtLocal: nowAsLocalInputValue(),
-      isNap: false,
-      qualityRating: "",
-      wakeFeeling: "",
-      notes: "",
-    },
+    defaultValues: initialData
+      ? {
+          wentToBedAtLocal: isoToLocalInputValue(initialData.wentToBedAt),
+          wokeUpAtLocal: isoToLocalInputValue(initialData.wokeUpAt),
+          isNap: initialData.isNap,
+          qualityRating: initialData.qualityRating != null ? String(initialData.qualityRating) : "",
+          wakeFeeling: initialData.wakeFeeling != null ? String(initialData.wakeFeeling) : "",
+          notes: initialData.notes ?? "",
+        }
+      : {
+          wentToBedAtLocal: nowAsLocalInputValue(),
+          wokeUpAtLocal: nowAsLocalInputValue(),
+          isNap: false,
+          qualityRating: "",
+          wakeFeeling: "",
+          notes: "",
+        },
   });
 
   async function onSubmit(values: FormValues) {
@@ -59,6 +85,11 @@ export function SleepSessionForm() {
     }
 
     try {
+      if (entryId) {
+        await apiClient.patch(`/sleep-sessions/${entryId}`, parsed.data);
+        navigate("/logs");
+        return;
+      }
       await apiClient.post("/sleep-sessions", parsed.data);
       setStatus("success");
       reset({
@@ -117,7 +148,7 @@ export function SleepSessionForm() {
       {status === "success" && <p className="text-sm text-emerald-600">Guardado.</p>}
 
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Guardando…" : "Guardar"}
+        {isSubmitting ? "Guardando…" : entryId ? "Guardar cambios" : "Guardar"}
       </Button>
     </form>
   );

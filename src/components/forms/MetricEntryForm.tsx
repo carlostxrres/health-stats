@@ -8,6 +8,7 @@ import {
 import { metricEntryInputSchema } from "@shared/validation";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import { Field } from "@/components/forms/Field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +21,16 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { apiClient } from "@/lib/api-client";
-import { localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
+import { isoToLocalInputValue, localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
+
+export type MetricEntryInitialData = {
+  metricType: string;
+  value: string;
+  valueSecondary: string | null;
+  bodySite: string | null;
+  recordedAt: string;
+  notes: string | null;
+};
 
 type FormValues = {
   metricType: string;
@@ -31,7 +41,14 @@ type FormValues = {
   notes: string;
 };
 
-export function MetricEntryForm() {
+export function MetricEntryForm({
+  entryId,
+  initialData,
+}: {
+  entryId?: string;
+  initialData?: MetricEntryInitialData;
+}) {
+  const navigate = useNavigate();
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -43,14 +60,23 @@ export function MetricEntryForm() {
     reset,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
-    defaultValues: {
-      metricType: METRIC_DEFINITIONS[0].code,
-      value: "",
-      valueSecondary: "",
-      bodySite: "",
-      recordedAtLocal: nowAsLocalInputValue(),
-      notes: "",
-    },
+    defaultValues: initialData
+      ? {
+          metricType: initialData.metricType,
+          value: initialData.value,
+          valueSecondary: initialData.valueSecondary ?? "",
+          bodySite: initialData.bodySite ?? "",
+          recordedAtLocal: isoToLocalInputValue(initialData.recordedAt),
+          notes: initialData.notes ?? "",
+        }
+      : {
+          metricType: METRIC_DEFINITIONS[0].code,
+          value: "",
+          valueSecondary: "",
+          bodySite: "",
+          recordedAtLocal: nowAsLocalInputValue(),
+          notes: "",
+        },
   });
 
   const metricType = watch("metricType");
@@ -78,6 +104,11 @@ export function MetricEntryForm() {
     }
 
     try {
+      if (entryId) {
+        await apiClient.patch(`/metrics/${entryId}`, parsed.data);
+        navigate("/logs");
+        return;
+      }
       await apiClient.post("/metrics", parsed.data);
       setStatus("success");
       reset({
@@ -172,7 +203,7 @@ export function MetricEntryForm() {
       {status === "success" && <p className="text-sm text-emerald-600">Guardado.</p>}
 
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Guardando…" : "Guardar"}
+        {isSubmitting ? "Guardando…" : entryId ? "Guardar cambios" : "Guardar"}
       </Button>
     </form>
   );

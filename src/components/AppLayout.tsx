@@ -1,17 +1,22 @@
 import { Outlet } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { supabase } from "@/lib/supabase";
+import { AppSidebar } from "@/components/app-sidebar";
+import { Separator } from "@/components/ui/separator";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 export function AppLayout() {
   return (
-    <div className="min-h-svh">
-      <header className="flex items-center justify-between border-b px-4 py-3">
-        <span className="font-heading text-sm font-medium">health-stats</span>
-        <Button variant="outline" size="sm" onClick={() => supabase.auth.signOut()}>
-          Cerrar sesión
-        </Button>
-      </header>
-      <Outlet />
-    </div>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <span className="font-heading text-sm font-medium">health-stats</span>
+        </header>
+        <div className="flex flex-1 flex-col">
+          <Outlet />
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

@@ -1,18 +1,34 @@
 import { bodyPhotoInputSchema } from "@shared/validation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import { Field } from "@/components/forms/Field";
 import { PhotoUploader } from "@/components/forms/PhotoUploader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { apiClient } from "@/lib/api-client";
-import { localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
+import { isoToLocalInputValue, localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
+
+export type BodyPhotoInitialData = {
+  takenAt: string;
+  description: string | null;
+  files: { storagePath: string }[];
+};
 
 type FormValues = { takenAtLocal: string; description: string };
 
-export function BodyPhotoForm() {
-  const [photoPaths, setPhotoPaths] = useState<string[]>([]);
+export function BodyPhotoForm({
+  entryId,
+  initialData,
+}: {
+  entryId?: string;
+  initialData?: BodyPhotoInitialData;
+}) {
+  const navigate = useNavigate();
+  const [photoPaths, setPhotoPaths] = useState<string[]>(
+    initialData ? initialData.files.map((f) => f.storagePath) : [],
+  );
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -22,7 +38,12 @@ export function BodyPhotoForm() {
     reset,
     formState: { isSubmitting },
   } = useForm<FormValues>({
-    defaultValues: { takenAtLocal: nowAsLocalInputValue(), description: "" },
+    defaultValues: initialData
+      ? {
+          takenAtLocal: isoToLocalInputValue(initialData.takenAt),
+          description: initialData.description ?? "",
+        }
+      : { takenAtLocal: nowAsLocalInputValue(), description: "" },
   });
 
   async function onSubmit(values: FormValues) {
@@ -42,6 +63,11 @@ export function BodyPhotoForm() {
     }
 
     try {
+      if (entryId) {
+        await apiClient.patch(`/body-photos/${entryId}`, parsed.data);
+        navigate("/logs");
+        return;
+      }
       await apiClient.post("/body-photos", parsed.data);
       setStatus("success");
       setPhotoPaths([]);
@@ -70,7 +96,7 @@ export function BodyPhotoForm() {
       {status === "success" && <p className="text-sm text-emerald-600">Guardado.</p>}
 
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Guardando…" : "Guardar"}
+        {isSubmitting ? "Guardando…" : entryId ? "Guardar cambios" : "Guardar"}
       </Button>
     </form>
   );

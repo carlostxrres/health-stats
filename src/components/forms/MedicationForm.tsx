@@ -1,15 +1,29 @@
 import { medicationInputSchema } from "@shared/validation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import { Field } from "@/components/forms/Field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiClient } from "@/lib/api-client";
-import { localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
+import { isoToLocalInputValue, localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
+
+export type MedicationInitialData = {
+  title: string;
+  takenAt: string;
+  location: string | null;
+};
 
 type FormValues = { title: string; takenAtLocal: string; location: string };
 
-export function MedicationForm() {
+export function MedicationForm({
+  entryId,
+  initialData,
+}: {
+  entryId?: string;
+  initialData?: MedicationInitialData;
+}) {
+  const navigate = useNavigate();
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -19,7 +33,13 @@ export function MedicationForm() {
     reset,
     formState: { isSubmitting },
   } = useForm<FormValues>({
-    defaultValues: { title: "", takenAtLocal: nowAsLocalInputValue(), location: "" },
+    defaultValues: initialData
+      ? {
+          title: initialData.title,
+          takenAtLocal: isoToLocalInputValue(initialData.takenAt),
+          location: initialData.location ?? "",
+        }
+      : { title: "", takenAtLocal: nowAsLocalInputValue(), location: "" },
   });
 
   async function onSubmit(values: FormValues) {
@@ -39,6 +59,11 @@ export function MedicationForm() {
     }
 
     try {
+      if (entryId) {
+        await apiClient.patch(`/medications/${entryId}`, parsed.data);
+        navigate("/logs");
+        return;
+      }
       await apiClient.post("/medications", parsed.data);
       setStatus("success");
       reset({ title: "", takenAtLocal: nowAsLocalInputValue(), location: "" });
@@ -66,7 +91,7 @@ export function MedicationForm() {
       {status === "success" && <p className="text-sm text-emerald-600">Guardado.</p>}
 
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Guardando…" : "Guardar"}
+        {isSubmitting ? "Guardando…" : entryId ? "Guardar cambios" : "Guardar"}
       </Button>
     </form>
   );

@@ -3,6 +3,7 @@ import { workoutInputSchema } from "@shared/validation";
 import { Plus, X } from "lucide-react";
 import { useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import { Field } from "@/components/forms/Field";
 import { PhotoUploader } from "@/components/forms/PhotoUploader";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,17 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { apiClient } from "@/lib/api-client";
-import { localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
+import { isoToLocalInputValue, localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
+
+export type WorkoutInitialData = {
+  workoutType: string;
+  startedAt: string;
+  durationMinutes: number | null;
+  notes: string | null;
+  metrics: { metricType: string; value: string; unit: string }[];
+  sets: { exerciseName: string; setNumber: number; reps: number | null; weightKg: string | null }[];
+  photos: { storagePath: string }[];
+};
 
 type FormValues = {
   workoutType: string;
@@ -27,8 +38,17 @@ type FormValues = {
   sets: { exerciseName: string; setNumber: string; reps: string; weightKg: string }[];
 };
 
-export function WorkoutForm() {
-  const [photoPaths, setPhotoPaths] = useState<string[]>([]);
+export function WorkoutForm({
+  entryId,
+  initialData,
+}: {
+  entryId?: string;
+  initialData?: WorkoutInitialData;
+}) {
+  const navigate = useNavigate();
+  const [photoPaths, setPhotoPaths] = useState<string[]>(
+    initialData ? initialData.photos.map((p) => p.storagePath) : [],
+  );
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -39,14 +59,33 @@ export function WorkoutForm() {
     reset,
     formState: { isSubmitting },
   } = useForm<FormValues>({
-    defaultValues: {
-      workoutType: WORKOUT_TYPES[0].code,
-      startedAtLocal: nowAsLocalInputValue(),
-      durationMinutes: "",
-      notes: "",
-      metrics: [],
-      sets: [],
-    },
+    defaultValues: initialData
+      ? {
+          workoutType: initialData.workoutType,
+          startedAtLocal: isoToLocalInputValue(initialData.startedAt),
+          durationMinutes:
+            initialData.durationMinutes != null ? String(initialData.durationMinutes) : "",
+          notes: initialData.notes ?? "",
+          metrics: initialData.metrics.map((m) => ({
+            metricType: m.metricType,
+            value: m.value,
+            unit: m.unit,
+          })),
+          sets: initialData.sets.map((s) => ({
+            exerciseName: s.exerciseName,
+            setNumber: String(s.setNumber),
+            reps: s.reps != null ? String(s.reps) : "",
+            weightKg: s.weightKg ?? "",
+          })),
+        }
+      : {
+          workoutType: WORKOUT_TYPES[0].code,
+          startedAtLocal: nowAsLocalInputValue(),
+          durationMinutes: "",
+          notes: "",
+          metrics: [],
+          sets: [],
+        },
   });
 
   const metricsArray = useFieldArray({ control, name: "metrics" });
@@ -82,6 +121,11 @@ export function WorkoutForm() {
     }
 
     try {
+      if (entryId) {
+        await apiClient.patch(`/workouts/${entryId}`, parsed.data);
+        navigate("/logs");
+        return;
+      }
       await apiClient.post("/workouts", parsed.data);
       setStatus("success");
       setPhotoPaths([]);
@@ -236,7 +280,7 @@ export function WorkoutForm() {
       {status === "success" && <p className="text-sm text-emerald-600">Guardado.</p>}
 
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Guardando…" : "Guardar"}
+        {isSubmitting ? "Guardando…" : entryId ? "Guardar cambios" : "Guardar"}
       </Button>
     </form>
   );

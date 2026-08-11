@@ -1,6 +1,11 @@
-import { HEALTH_EPISODE_TYPES, healthEpisodeInputSchema } from "@shared/validation";
+import {
+  EPISODE_TYPE_LABELS,
+  HEALTH_EPISODE_TYPES,
+  healthEpisodeInputSchema,
+} from "@shared/validation";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import { Field } from "@/components/forms/Field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,11 +18,14 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { apiClient } from "@/lib/api-client";
-import { localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
+import { isoToLocalInputValue, localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
 
-const EPISODE_TYPE_LABELS: Record<(typeof HEALTH_EPISODE_TYPES)[number], string> = {
-  injury: "Lesión",
-  illness: "Enfermedad",
+export type HealthEpisodeInitialData = {
+  episodeType: string;
+  title: string;
+  description: string | null;
+  startedAt: string;
+  recoveredAt: string | null;
 };
 
 type FormValues = {
@@ -28,7 +36,14 @@ type FormValues = {
   recoveredAt: string;
 };
 
-export function HealthEpisodeForm() {
+export function HealthEpisodeForm({
+  entryId,
+  initialData,
+}: {
+  entryId?: string;
+  initialData?: HealthEpisodeInitialData;
+}) {
+  const navigate = useNavigate();
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -39,13 +54,21 @@ export function HealthEpisodeForm() {
     reset,
     formState: { isSubmitting },
   } = useForm<FormValues>({
-    defaultValues: {
-      episodeType: HEALTH_EPISODE_TYPES[0],
-      title: "",
-      description: "",
-      startedAtLocal: nowAsLocalInputValue(),
-      recoveredAt: "",
-    },
+    defaultValues: initialData
+      ? {
+          episodeType: initialData.episodeType,
+          title: initialData.title,
+          description: initialData.description ?? "",
+          startedAtLocal: isoToLocalInputValue(initialData.startedAt),
+          recoveredAt: initialData.recoveredAt ?? "",
+        }
+      : {
+          episodeType: HEALTH_EPISODE_TYPES[0],
+          title: "",
+          description: "",
+          startedAtLocal: nowAsLocalInputValue(),
+          recoveredAt: "",
+        },
   });
 
   async function onSubmit(values: FormValues) {
@@ -67,6 +90,11 @@ export function HealthEpisodeForm() {
     }
 
     try {
+      if (entryId) {
+        await apiClient.patch(`/health-episodes/${entryId}`, parsed.data);
+        navigate("/logs");
+        return;
+      }
       await apiClient.post("/health-episodes", parsed.data);
       setStatus("success");
       reset({
@@ -123,7 +151,7 @@ export function HealthEpisodeForm() {
       {status === "success" && <p className="text-sm text-emerald-600">Guardado.</p>}
 
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Guardando…" : "Guardar"}
+        {isSubmitting ? "Guardando…" : entryId ? "Guardar cambios" : "Guardar"}
       </Button>
     </form>
   );

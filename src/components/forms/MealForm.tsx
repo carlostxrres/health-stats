@@ -2,13 +2,23 @@ import { mealInputSchema } from "@shared/validation";
 import { Plus, X } from "lucide-react";
 import { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import { Field } from "@/components/forms/Field";
 import { PhotoUploader } from "@/components/forms/PhotoUploader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { apiClient } from "@/lib/api-client";
-import { localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
+import { isoToLocalInputValue, localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
+
+export type MealInitialData = {
+  title: string;
+  description: string | null;
+  eatenAt: string;
+  location: string | null;
+  ingredients: { ingredient: string; quantityValue: string | null; quantityUnit: string | null }[];
+  photos: { storagePath: string }[];
+};
 
 type FormValues = {
   title: string;
@@ -18,8 +28,17 @@ type FormValues = {
   ingredients: { ingredient: string; quantityValue: string; quantityUnit: string }[];
 };
 
-export function MealForm() {
-  const [photoPaths, setPhotoPaths] = useState<string[]>([]);
+export function MealForm({
+  entryId,
+  initialData,
+}: {
+  entryId?: string;
+  initialData?: MealInitialData;
+}) {
+  const navigate = useNavigate();
+  const [photoPaths, setPhotoPaths] = useState<string[]>(
+    initialData ? initialData.photos.map((p) => p.storagePath) : [],
+  );
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -30,13 +49,25 @@ export function MealForm() {
     reset,
     formState: { isSubmitting },
   } = useForm<FormValues>({
-    defaultValues: {
-      title: "",
-      description: "",
-      eatenAtLocal: nowAsLocalInputValue(),
-      location: "",
-      ingredients: [],
-    },
+    defaultValues: initialData
+      ? {
+          title: initialData.title,
+          description: initialData.description ?? "",
+          eatenAtLocal: isoToLocalInputValue(initialData.eatenAt),
+          location: initialData.location ?? "",
+          ingredients: initialData.ingredients.map((i) => ({
+            ingredient: i.ingredient,
+            quantityValue: i.quantityValue ?? "",
+            quantityUnit: i.quantityUnit ?? "",
+          })),
+        }
+      : {
+          title: "",
+          description: "",
+          eatenAtLocal: nowAsLocalInputValue(),
+          location: "",
+          ingredients: [],
+        },
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "ingredients" });
@@ -67,6 +98,11 @@ export function MealForm() {
     }
 
     try {
+      if (entryId) {
+        await apiClient.patch(`/meals/${entryId}`, parsed.data);
+        navigate("/logs");
+        return;
+      }
       await apiClient.post("/meals", parsed.data);
       setStatus("success");
       setPhotoPaths([]);
@@ -143,7 +179,7 @@ export function MealForm() {
       {status === "success" && <p className="text-sm text-emerald-600">Guardado.</p>}
 
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Guardando…" : "Guardar"}
+        {isSubmitting ? "Guardando…" : entryId ? "Guardar cambios" : "Guardar"}
       </Button>
     </form>
   );
