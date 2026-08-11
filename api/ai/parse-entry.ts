@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { AI_ENTRY_CONFIGS, buildAiTools, parseEntryRequestSchema } from "../_lib/aiSchemas";
 import { anthropic } from "../_lib/anthropic";
 import { createHandler } from "../_lib/http";
-import { AI_ENTRY_CONFIGS, buildAiTools, parseEntryRequestSchema } from "./schemas";
 
 function buildSystemPrompt(now: string): string {
   return [
