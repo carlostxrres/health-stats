@@ -135,7 +135,11 @@ export function LogPage() {
         </CardHeader>
         {!id && (
           <CardContent>
-            <Select value={selected} onValueChange={(value) => setSelected(value as EntryTypeCode)}>
+            <Select
+              items={ENTRY_TYPES.map((type) => ({ value: type.code, label: type.label }))}
+              value={selected}
+              onValueChange={(value) => setSelected(value as EntryTypeCode)}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>

@@ -20,6 +20,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { apiClient } from "@/lib/api-client";
 import { isoToLocalInputValue, localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
 
+const EPISODE_TYPE_ITEMS = HEALTH_EPISODE_TYPES.map((type) => ({
+  value: type,
+  label: EPISODE_TYPE_LABELS[type],
+}));
+
 export type HealthEpisodeInitialData = {
   episodeType: string;
   title: string;
@@ -117,7 +122,7 @@ export function HealthEpisodeForm({
           control={control}
           name="episodeType"
           render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
+            <Select items={EPISODE_TYPE_ITEMS} value={field.value} onValueChange={field.onChange}>
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>

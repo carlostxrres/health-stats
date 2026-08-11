@@ -23,6 +23,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { apiClient } from "@/lib/api-client";
 import { isoToLocalInputValue, localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
 
+const METRIC_TYPE_ITEMS = METRIC_DEFINITIONS.map((m) => ({ value: m.code, label: m.label }));
+const BODY_SITE_ITEMS = BODY_SITES.map((site) => ({ value: site, label: BODY_SITE_LABELS[site] }));
+
 export type MetricEntryInitialData = {
   metricType: string;
   value: string;
@@ -132,7 +135,7 @@ export function MetricEntryForm({
           control={control}
           name="metricType"
           render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
+            <Select items={METRIC_TYPE_ITEMS} value={field.value} onValueChange={field.onChange}>
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -172,7 +175,7 @@ export function MetricEntryForm({
             control={control}
             name="bodySite"
             render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
+              <Select items={BODY_SITE_ITEMS} value={field.value} onValueChange={field.onChange}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecciona una zona" />
                 </SelectTrigger>

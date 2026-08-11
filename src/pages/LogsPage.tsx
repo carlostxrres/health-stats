@@ -130,7 +130,14 @@ export function LogsPage() {
             <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
           </Field>
           <Field label="Orden">
-            <Select value={sort} onValueChange={(value) => setSort(value as "asc" | "desc")}>
+            <Select
+              items={[
+                { value: "desc", label: "Más recientes primero" },
+                { value: "asc", label: "Más antiguos primero" },
+              ]}
+              value={sort}
+              onValueChange={(value) => setSort(value as "asc" | "desc")}
+            >
               <SelectTrigger className="w-48">
                 <SelectValue />
               </SelectTrigger>
