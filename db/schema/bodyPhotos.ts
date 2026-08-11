@@ -26,3 +26,10 @@ export const bodyPhotoFiles = pgTable("body_photo_files", {
 export const bodyPhotosRelations = relations(bodyPhotos, ({ many }) => ({
   files: many(bodyPhotoFiles),
 }));
+
+export const bodyPhotoFilesRelations = relations(bodyPhotoFiles, ({ one }) => ({
+  bodyPhoto: one(bodyPhotos, {
+    fields: [bodyPhotoFiles.bodyPhotoId],
+    references: [bodyPhotos.id],
+  }),
+}));

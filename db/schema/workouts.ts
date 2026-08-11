@@ -61,3 +61,15 @@ export const workoutsRelations = relations(workouts, ({ many }) => ({
   sets: many(workoutSets),
   photos: many(workoutPhotos),
 }));
+
+export const workoutMetricsRelations = relations(workoutMetrics, ({ one }) => ({
+  workout: one(workouts, { fields: [workoutMetrics.workoutId], references: [workouts.id] }),
+}));
+
+export const workoutSetsRelations = relations(workoutSets, ({ one }) => ({
+  workout: one(workouts, { fields: [workoutSets.workoutId], references: [workouts.id] }),
+}));
+
+export const workoutPhotosRelations = relations(workoutPhotos, ({ one }) => ({
+  workout: one(workouts, { fields: [workoutPhotos.workoutId], references: [workouts.id] }),
+}));

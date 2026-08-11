@@ -41,3 +41,11 @@ export const mealsRelations = relations(meals, ({ many }) => ({
   ingredients: many(mealIngredients),
   photos: many(mealPhotos),
 }));
+
+export const mealIngredientsRelations = relations(mealIngredients, ({ one }) => ({
+  meal: one(meals, { fields: [mealIngredients.mealId], references: [meals.id] }),
+}));
+
+export const mealPhotosRelations = relations(mealPhotos, ({ one }) => ({
+  meal: one(meals, { fields: [mealPhotos.mealId], references: [meals.id] }),
+}));
