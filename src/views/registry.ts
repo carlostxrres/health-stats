@@ -1,5 +1,7 @@
-import { Scale } from "lucide-react";
+import { AlarmClock, BedDouble, Scale } from "lucide-react";
 import type { ComponentType } from "react";
+import { SleepPeriodsView } from "@/views/sleep-periods/SleepPeriodsView";
+import { SleepTimesView } from "@/views/sleep-times/SleepTimesView";
 import { WeightView } from "@/views/weight/WeightView";
 
 export type ViewDefinition = {
@@ -15,6 +17,18 @@ export const VIEWS: ViewDefinition[] = [
     name: "Body weight (simple)",
     icon: Scale,
     component: WeightView,
+  },
+  {
+    slug: "sleep-times",
+    name: "Sleep times",
+    icon: BedDouble,
+    component: SleepTimesView,
+  },
+  {
+    slug: "sleep-periods",
+    name: "Sleep periods",
+    icon: AlarmClock,
+    component: SleepPeriodsView,
   },
 ];
 
