@@ -24,6 +24,7 @@ type SleepPeriodRow = {
   range: [number, number];
   wentToBedAt: string;
   wokeUpAt: string;
+  isNap: boolean;
 };
 
 const chartConfig = {
@@ -69,6 +70,7 @@ function SleepPeriodTooltipContent({
           >
             <span>
               {localClock(row.wentToBedAt)}–{localClock(row.wokeUpAt)}
+              {row.isNap ? " · siesta" : ""}
             </span>
             <span className="font-mono tabular-nums text-foreground">
               {(row.range[1] - row.range[0]).toFixed(1)} h
@@ -102,26 +104,22 @@ export function SleepPeriodsView() {
   }, []);
 
   const { chartData, sessionsByDay, maxSessionsPerDay } = useMemo(() => {
-    // Naps happen at all kinds of hours and would clutter a chart about
-    // bedtime/wake-time consistency, so only the main, non-nap sleep of
-    // each night is plotted here.
-    const rows = (sessions ?? [])
-      .filter((session) => !session.isNap)
-      .map((session): SleepPeriodRow => {
-        const start = hoursSinceBoundary(session.wentToBedAt);
-        const durationHours =
-          (new Date(session.wokeUpAt).getTime() - new Date(session.wentToBedAt).getTime()) /
-          (1000 * 60 * 60);
-        return {
-          id: session.id,
-          // Grouped by the day the session ended, same convention as the
-          // "Sleep times" view.
-          day: localDayKey(session.wokeUpAt),
-          range: [start, start + durationHours],
-          wentToBedAt: session.wentToBedAt,
-          wokeUpAt: session.wokeUpAt,
-        };
-      });
+    const rows = (sessions ?? []).map((session): SleepPeriodRow => {
+      const start = hoursSinceBoundary(session.wentToBedAt);
+      const durationHours =
+        (new Date(session.wokeUpAt).getTime() - new Date(session.wentToBedAt).getTime()) /
+        (1000 * 60 * 60);
+      return {
+        id: session.id,
+        // Grouped by the day the session ended, same convention as the
+        // "Sleep times" view.
+        day: localDayKey(session.wokeUpAt),
+        range: [start, start + durationHours],
+        wentToBedAt: session.wentToBedAt,
+        wokeUpAt: session.wokeUpAt,
+        isNap: session.isNap,
+      };
+    });
 
     const sessionsByDay = new Map<string, SleepPeriodRow[]>();
     for (const row of rows) {
