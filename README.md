@@ -117,7 +117,7 @@ El plan completo (decisiones, esquema detallado, fases futuras) está en `/home/
 ## Puesta en marcha
 
 1. **Crear el proyecto en Supabase** (supabase.com/dashboard): anota la URL del proyecto, la `anon key` y la `service_role key` (Project Settings → API), y las connection strings de Postgres (Project Settings → Database): la del **pooler** (puerto 6543) y la **directa** (puerto 5432).
-2. **Crear el bucket de Storage** `health-photos` (privado) y una política que permita leer/escribir solo a usuarios autenticados.
+2. **Crear el bucket de Storage** `health-photos` (privado) y aplicar las políticas de `db/storage-policies.sql` (pégalas en el SQL editor de Supabase) para que los usuarios autenticados puedan leer/escribir en él.
 3. **Crear el único usuario** manualmente en Authentication → Users, y desactivar "Allow new users to sign up" en Authentication → Settings.
 4. **Configurar variables de entorno**: copia `.env.example` a `.env` y rellena los valores del paso 1.
 5. **Instalar dependencias y aplicar el esquema:**

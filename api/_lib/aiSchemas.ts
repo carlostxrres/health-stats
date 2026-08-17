@@ -51,7 +51,7 @@ const aiMetricSchema = z.object({
   notes: z.string().max(2000).optional(),
 });
 
-const aiMealSchema = z.object({
+export const aiMealSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().max(2000).optional(),
   eatenAt: z.iso
@@ -163,6 +163,21 @@ function config<Schema extends z.ZodTypeAny>(
   return c as AiEntryConfig<z.ZodTypeAny>;
 }
 
+export function buildMealInitialData(input: z.infer<typeof aiMealSchema>, now: string) {
+  return {
+    title: input.title,
+    description: input.description ?? null,
+    eatenAt: input.eatenAt ?? now,
+    location: input.location ?? null,
+    ingredients: input.ingredients.map((i) => ({
+      ingredient: i.ingredient,
+      quantityValue: i.quantityValue != null ? String(i.quantityValue) : null,
+      quantityUnit: i.quantityUnit ?? null,
+    })),
+    photos: [] as { storagePath: string }[],
+  };
+}
+
 export const AI_ENTRY_CONFIGS: AiEntryConfig<z.ZodTypeAny>[] = [
   config({
     code: "metric",
@@ -179,18 +194,7 @@ export const AI_ENTRY_CONFIGS: AiEntryConfig<z.ZodTypeAny>[] = [
   config({
     code: "meal",
     schema: aiMealSchema,
-    buildInitialData: (input, now) => ({
-      title: input.title,
-      description: input.description ?? null,
-      eatenAt: input.eatenAt ?? now,
-      location: input.location ?? null,
-      ingredients: input.ingredients.map((i) => ({
-        ingredient: i.ingredient,
-        quantityValue: i.quantityValue != null ? String(i.quantityValue) : null,
-        quantityUnit: i.quantityUnit ?? null,
-      })),
-      photos: [],
-    }),
+    buildInitialData: buildMealInitialData,
   }),
   config({
     code: "medication",
@@ -257,19 +261,40 @@ export const AI_ENTRY_CONFIGS: AiEntryConfig<z.ZodTypeAny>[] = [
   }),
 ];
 
+function toolFromSchema(name: string, schema: z.ZodTypeAny, description: string): Anthropic.Tool {
+  const { $schema, ...inputSchema } = z.toJSONSchema(schema);
+  return { name, description, input_schema: inputSchema as Anthropic.Tool.InputSchema };
+}
+
 export function buildAiTools(): Anthropic.Tool[] {
   return AI_ENTRY_CONFIGS.map(({ code, schema }) => {
-    const { $schema, ...inputSchema } = z.toJSONSchema(schema);
     const label = ENTRY_TYPES.find((t) => t.code === code)?.label ?? code;
-    return {
-      name: code,
-      description: `Registrar una entrada de tipo "${label}".`,
-      input_schema: inputSchema as Anthropic.Tool.InputSchema,
-    };
+    return toolFromSchema(code, schema, `Registrar una entrada de tipo "${label}".`);
   });
+}
+
+export function buildMealAiTool(): Anthropic.Tool {
+  const label = ENTRY_TYPES.find((t) => t.code === "meal")?.label ?? "meal";
+  return toolFromSchema("meal", aiMealSchema, `Registrar una entrada de tipo "${label}".`);
 }
 
 export const parseEntryRequestSchema = z.object({
   text: z.string().min(1).max(1000),
   now: z.iso.datetime({ offset: true }),
 });
+
+export const aiImageInputSchema = z.object({
+  mediaType: z.enum(["image/jpeg", "image/png", "image/gif", "image/webp"]),
+  data: z.string().min(1).max(2_500_000),
+});
+
+export const parseMealPhotoRequestSchema = z
+  .object({
+    text: z.string().max(1000).optional(),
+    now: z.iso.datetime({ offset: true }),
+    images: z.array(aiImageInputSchema).min(1).max(4),
+  })
+  .refine((v) => v.images.reduce((sum, img) => sum + img.data.length, 0) <= 5_000_000, {
+    message: "Las imágenes son demasiado grandes en conjunto.",
+    path: ["images"],
+  });

@@ -10,6 +10,7 @@ import {
 import { MealForm, type MealInitialData } from "@/components/forms/MealForm";
 import { MedicationForm, type MedicationInitialData } from "@/components/forms/MedicationForm";
 import { MetricEntryForm, type MetricEntryInitialData } from "@/components/forms/MetricEntryForm";
+import type { UploadedPhotoFile } from "@/components/forms/PhotoUploader";
 import {
   SleepSessionForm,
   type SleepSessionInitialData,
@@ -38,14 +39,25 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { apiClient } from "@/lib/api-client";
 
-function renderForm(code: EntryTypeCode, entryId: string | undefined, initialData: unknown) {
+function renderForm(
+  code: EntryTypeCode,
+  entryId: string | undefined,
+  initialData: unknown,
+  onMealPhotosChange: (photos: UploadedPhotoFile[]) => void,
+) {
   switch (code) {
     case "metric":
       return (
         <MetricEntryForm entryId={entryId} initialData={initialData as MetricEntryInitialData} />
       );
     case "meal":
-      return <MealForm entryId={entryId} initialData={initialData as MealInitialData} />;
+      return (
+        <MealForm
+          entryId={entryId}
+          initialData={initialData as MealInitialData}
+          onPhotosChange={entryId ? undefined : onMealPhotosChange}
+        />
+      );
     case "medication":
       return (
         <MedicationForm entryId={entryId} initialData={initialData as MedicationInitialData} />
@@ -73,6 +85,7 @@ export function LogPage() {
   const navigate = useNavigate();
   const [selected, setSelected] = useState<EntryTypeCode>("metric");
   const [initialData, setInitialData] = useState<unknown>(null);
+  const [mealPhotos, setMealPhotos] = useState<UploadedPhotoFile[]>([]);
   // Bumped on every AI parse so the form remounts even when the AI picks the
   // same type that was already selected — `key={id ?? selected}` alone
   // wouldn't change in that case, and react-hook-form only reads
@@ -110,6 +123,7 @@ export function LogPage() {
     setSelected(type);
     setInitialData(data);
     setAiFillVersion((v) => v + 1);
+    setMealPhotos([]);
   }
 
   async function handleDelete() {
@@ -138,7 +152,11 @@ export function LogPage() {
             <Select
               items={ENTRY_TYPES.map((type) => ({ value: type.code, label: type.label }))}
               value={selected}
-              onValueChange={(value) => setSelected(value as EntryTypeCode)}
+              onValueChange={(value) => {
+                const next = value as EntryTypeCode;
+                setSelected(next);
+                if (next !== "meal") setMealPhotos([]);
+              }}
             >
               <SelectTrigger className="w-full">
                 <SelectValue />
@@ -172,7 +190,7 @@ export function LogPage() {
       {!loading && !loadError && (
         <Card key={`${id ?? selected}:${aiFillVersion}`}>
           <CardContent className="flex flex-col gap-4">
-            {renderForm(current.code, id, initialData)}
+            {renderForm(current.code, id, initialData, setMealPhotos)}
 
             {id && (
               <>
@@ -219,7 +237,12 @@ export function LogPage() {
         </Card>
       )}
 
-      {!id && <AiPromptBar onParsed={handleAiParsed} />}
+      {!id && (
+        <AiPromptBar
+          onParsed={handleAiParsed}
+          images={selected === "meal" ? mealPhotos : undefined}
+        />
+      )}
     </div>
   );
 }
