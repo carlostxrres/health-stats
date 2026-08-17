@@ -3,38 +3,20 @@ import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { type ChartConfig, ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { apiClient } from "@/lib/api-client";
+import {
+  enumerateDays,
+  formatDayLabel,
+  formatDayTick,
+  localClock,
+  localDayKey,
+  localHourOfDay,
+} from "@/lib/localTime";
 
 // The Y axis is a 24h band starting at this hour, not at midnight, so a
 // normal night's sleep (evening to next morning) never wraps around the
 // edge of the axis. Change this if your bedtime tends to fall outside the
 // 18:00-18:00 window.
 const DAY_BOUNDARY_HOUR = 18;
-
-// This app is single-user (see README), so rather than tracking a per-user
-// timezone preference, times are displayed in a fixed zone regardless of
-// the viewing device's own timezone. Change this if you move.
-const DISPLAY_TIME_ZONE = "Europe/Madrid";
-
-const dayKeyFormatter = new Intl.DateTimeFormat("en-CA", {
-  timeZone: DISPLAY_TIME_ZONE,
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
-
-const clockPartsFormatter = new Intl.DateTimeFormat("en-US", {
-  timeZone: DISPLAY_TIME_ZONE,
-  hour: "2-digit",
-  minute: "2-digit",
-  second: "2-digit",
-  hourCycle: "h23",
-});
-
-const clockFormatter = new Intl.DateTimeFormat("es-ES", {
-  timeZone: DISPLAY_TIME_ZONE,
-  hour: "2-digit",
-  minute: "2-digit",
-});
 
 type SleepPeriodRow = {
   id: string;
@@ -48,23 +30,10 @@ const chartConfig = {
   sleep: { label: "Periodo de sueño", color: "var(--chart-3)" },
 } satisfies ChartConfig;
 
-// "YYYY-MM-DD" in DISPLAY_TIME_ZONE, regardless of the viewing device's own
-// timezone (en-CA formats dates in that order).
-function localDayKey(iso: string) {
-  return dayKeyFormatter.format(new Date(iso));
-}
-
-// Hours + fraction since DAY_BOUNDARY_HOUR, in DISPLAY_TIME_ZONE.
+// Hours + fraction since DAY_BOUNDARY_HOUR.
 function hoursSinceBoundary(iso: string) {
-  const parts = clockPartsFormatter.formatToParts(new Date(iso));
-  const get = (type: string) => Number(parts.find((part) => part.type === type)?.value ?? 0);
-  const hours = get("hour") + get("minute") / 60 + get("second") / 3600;
-  const offset = hours - DAY_BOUNDARY_HOUR;
+  const offset = localHourOfDay(iso) - DAY_BOUNDARY_HOUR;
   return offset < 0 ? offset + 24 : offset;
-}
-
-function formatClock(iso: string) {
-  return clockFormatter.format(new Date(iso));
 }
 
 // Converts an axis value (hours since DAY_BOUNDARY_HOUR) back into a clock
@@ -74,39 +43,6 @@ function formatBoundaryOffset(offsetHours: number) {
   const hh = Math.floor(totalMinutes / 60);
   const mm = totalMinutes % 60;
   return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
-}
-
-// day strings are already plain "YYYY-MM-DD" calendar dates (see
-// localDayKey), so parsing them without a timezone offset and formatting
-// with the viewer's own locale/zone is safe: both steps use the same
-// implicit zone, so the calendar date never shifts.
-function formatDayTick(day: string) {
-  return new Date(`${day}T00:00:00`).toLocaleDateString("es-ES", {
-    day: "2-digit",
-    month: "short",
-  });
-}
-
-function formatDayLabel(day: string) {
-  return new Date(`${day}T00:00:00`).toLocaleDateString("es-ES", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-// Every calendar day from `startDay` to `endDay`, inclusive, so days with
-// no sleep session still get an (empty) slot on the axis.
-function enumerateDays(startDay: string, endDay: string) {
-  const days: string[] = [];
-  const cursor = new Date(`${startDay}T00:00:00`);
-  const end = new Date(`${endDay}T00:00:00`);
-  while (cursor <= end) {
-    const pad = (n: number) => String(n).padStart(2, "0");
-    days.push(`${cursor.getFullYear()}-${pad(cursor.getMonth() + 1)}-${pad(cursor.getDate())}`);
-    cursor.setDate(cursor.getDate() + 1);
-  }
-  return days;
 }
 
 const AXIS_TICKS = [0, 3, 6, 9, 12, 15, 18, 21, 24];
@@ -132,7 +68,7 @@ function SleepPeriodTooltipContent({
             className="flex items-center justify-between gap-3 text-muted-foreground"
           >
             <span>
-              {formatClock(row.wentToBedAt)}–{formatClock(row.wokeUpAt)}
+              {localClock(row.wentToBedAt)}–{localClock(row.wokeUpAt)}
             </span>
             <span className="font-mono tabular-nums text-foreground">
               {(row.range[1] - row.range[0]).toFixed(1)} h

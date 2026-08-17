@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { type ChartConfig, ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { apiClient } from "@/lib/api-client";
+import { formatDayLabel, formatDayTick, localClock, localDayKey } from "@/lib/localTime";
 
 type SleepSegment = {
   hours: number;
@@ -19,27 +20,6 @@ const chartConfig = {
 
 function sessionHours(wentToBedAt: string, wokeUpAt: string) {
   return (new Date(wokeUpAt).getTime() - new Date(wentToBedAt).getTime()) / (1000 * 60 * 60);
-}
-
-function formatDayTick(day: string) {
-  return new Date(`${day}T00:00:00Z`).toLocaleDateString("es-ES", {
-    day: "2-digit",
-    month: "short",
-    timeZone: "UTC",
-  });
-}
-
-function formatDayLabel(day: string) {
-  return new Date(`${day}T00:00:00Z`).toLocaleDateString("es-ES", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  });
-}
-
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
 }
 
 function SleepTooltipContent({
@@ -64,7 +44,7 @@ function SleepTooltipContent({
             className="flex items-center justify-between gap-3 text-muted-foreground"
           >
             <span>
-              {formatTime(segment.wentToBedAt)}–{formatTime(segment.wokeUpAt)}
+              {localClock(segment.wentToBedAt)}–{localClock(segment.wokeUpAt)}
               {segment.isNap ? " · siesta" : ""}
             </span>
             <span className="font-mono tabular-nums text-foreground">
@@ -105,9 +85,7 @@ export function SleepTimesView() {
   const { chartData, segmentsByDay, maxSegments } = useMemo(() => {
     const byDay = new Map<string, SleepSegment[]>();
     for (const session of sessions ?? []) {
-      // The date portion of the raw woke-up timestamp IS the calendar day the
-      // session counts toward — no timezone conversion needed.
-      const day = session.wokeUpAt.slice(0, 10);
+      const day = localDayKey(session.wokeUpAt);
       const segment: SleepSegment = {
         hours: sessionHours(session.wentToBedAt, session.wokeUpAt),
         wentToBedAt: session.wentToBedAt,
