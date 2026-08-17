@@ -6,6 +6,8 @@ import { HomePage } from "@/pages/HomePage";
 import { LoginPage } from "@/pages/LoginPage";
 import { LogPage } from "@/pages/LogPage";
 import { LogsPage } from "@/pages/LogsPage";
+import { ViewDetailPage } from "@/pages/ViewDetailPage";
+import { ViewIndexPage } from "@/pages/ViewIndexPage";
 import { ViewPage } from "@/pages/ViewPage";
 
 function App() {
@@ -17,7 +19,10 @@ function App() {
           <Route element={<AppLayout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/logs" element={<LogsPage />} />
-            <Route path="/view" element={<ViewPage />} />
+            <Route path="/view" element={<ViewPage />}>
+              <Route index element={<ViewIndexPage />} />
+              <Route path=":slug" element={<ViewDetailPage />} />
+            </Route>
             <Route element={<RequireAuth />}>
               <Route path="/log" element={<LogPage />} />
               <Route path="/log/:id" element={<LogPage />} />
