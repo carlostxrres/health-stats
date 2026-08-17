@@ -1,21 +1,35 @@
 import { X } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 
 const PHOTOS_BUCKET = "health-photos";
 
+export type UploadedPhotoFile = { storagePath: string; file: File };
+
 export function PhotoUploader({
   pathPrefix,
   value,
   onChange,
+  onFilesChange,
 }: {
   pathPrefix: string;
   value: string[];
   onChange: (paths: string[]) => void;
+  onFilesChange?: (files: UploadedPhotoFile[]) => void;
 }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const filesByPathRef = useRef(new Map<string, File>());
+
+  function reportFiles(paths: string[]) {
+    onFilesChange?.(
+      paths.flatMap((path) => {
+        const file = filesByPathRef.current.get(path);
+        return file ? [{ storagePath: path, file }] : [];
+      }),
+    );
+  }
 
   async function handleFiles(fileList: FileList | null) {
     if (!fileList || fileList.length === 0) return;
@@ -31,9 +45,12 @@ export function PhotoUploader({
         if (uploadError) {
           throw uploadError;
         }
+        filesByPathRef.current.set(path, file);
         uploaded.push(path);
       }
-      onChange([...value, ...uploaded]);
+      const next = [...value, ...uploaded];
+      onChange(next);
+      reportFiles(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al subir la foto");
     } finally {
@@ -42,7 +59,11 @@ export function PhotoUploader({
   }
 
   function removeAt(index: number) {
-    onChange(value.filter((_, i) => i !== index));
+    const removed = value[index];
+    filesByPathRef.current.delete(removed);
+    const next = value.filter((_, i) => i !== index);
+    onChange(next);
+    reportFiles(next);
   }
 
   return (

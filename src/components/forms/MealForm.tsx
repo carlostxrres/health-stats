@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { Field } from "@/components/forms/Field";
-import { PhotoUploader } from "@/components/forms/PhotoUploader";
+import { PhotoUploader, type UploadedPhotoFile } from "@/components/forms/PhotoUploader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,9 +31,11 @@ type FormValues = {
 export function MealForm({
   entryId,
   initialData,
+  onPhotosChange,
 }: {
   entryId?: string;
   initialData?: MealInitialData;
+  onPhotosChange?: (photos: UploadedPhotoFile[]) => void;
 }) {
   const navigate = useNavigate();
   const [photoPaths, setPhotoPaths] = useState<string[]>(
@@ -106,6 +108,7 @@ export function MealForm({
       await apiClient.post("/meals", parsed.data);
       setStatus("success");
       setPhotoPaths([]);
+      onPhotosChange?.([]);
       reset({
         title: "",
         description: "",
@@ -170,7 +173,12 @@ export function MealForm({
       </div>
 
       <Field label="Fotos (opcional)">
-        <PhotoUploader pathPrefix="meals" value={photoPaths} onChange={setPhotoPaths} />
+        <PhotoUploader
+          pathPrefix="meals"
+          value={photoPaths}
+          onChange={setPhotoPaths}
+          onFilesChange={onPhotosChange}
+        />
       </Field>
 
       {status === "error" && errorMessage && (

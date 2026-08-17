@@ -1,6 +1,7 @@
 import type { EntryTypeCode } from "@shared/entryTypes";
-import { Loader2, Send, Sparkles } from "lucide-react";
+import { Image as ImageIcon, Loader2, Send, Sparkles } from "lucide-react";
 import { type FormEvent, useState } from "react";
+import type { UploadedPhotoFile } from "@/components/forms/PhotoUploader";
 import {
   InputGroup,
   InputGroupAddon,
@@ -10,33 +11,65 @@ import {
 } from "@/components/ui/input-group";
 import { apiClient } from "@/lib/api-client";
 import { localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
+import { compressImageToBase64 } from "@/lib/imageCompression";
+
+const MAX_IMAGES = 4;
 
 export function AiPromptBar({
   onParsed,
+  images = [],
 }: {
   onParsed: (type: EntryTypeCode, data: unknown) => void;
+  images?: UploadedPhotoFile[];
 }) {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const canSubmit = text.trim().length > 0;
+  const hasImages = images.length > 0;
+  const canSubmit = text.trim().length > 0 || hasImages;
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const trimmed = text.trim();
-    if (!trimmed || loading) return;
+    if (loading || (!trimmed && !hasImages)) return;
 
     setLoading(true);
     setError(null);
     try {
-      const res = await apiClient.post<{ type: EntryTypeCode; data: unknown }>("/ai/parse-entry", {
-        text: trimmed,
-        now: localInputToIso(nowAsLocalInputValue()),
-      });
-      onParsed(res.type, res.data);
+      const now = localInputToIso(nowAsLocalInputValue());
+      let type: EntryTypeCode;
+      let data: unknown;
+
+      if (hasImages) {
+        if (images.length > MAX_IMAGES) {
+          throw new Error(`Máximo ${MAX_IMAGES} fotos por análisis.`);
+        }
+        const compressed = await Promise.all(images.map((img) => compressImageToBase64(img.file)));
+        const res = await apiClient.post<{ type: "meal"; data: Record<string, unknown> }>(
+          "/ai/parse-meal-photo",
+          { text: trimmed || undefined, now, images: compressed },
+        );
+        type = res.type;
+        data = { ...res.data, photos: images.map((img) => ({ storagePath: img.storagePath })) };
+      } else {
+        const res = await apiClient.post<{ type: EntryTypeCode; data: unknown }>(
+          "/ai/parse-entry",
+          { text: trimmed, now },
+        );
+        type = res.type;
+        data = res.data;
+      }
+
+      onParsed(type, data);
       setText("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo interpretar el texto.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : hasImages
+            ? "No se pudo interpretar la foto."
+            : "No se pudo interpretar el texto.",
+      );
     } finally {
       setLoading(false);
     }
@@ -49,8 +82,20 @@ export function AiPromptBar({
           <InputGroupAddon>
             <Sparkles />
           </InputGroupAddon>
+          {hasImages && (
+            <InputGroupAddon>
+              <InputGroupText className="gap-1 text-foreground">
+                <ImageIcon className="size-4" />
+                {images.length}
+              </InputGroupText>
+            </InputGroupAddon>
+          )}
           <InputGroupInput
-            placeholder='Describe qué quieres registrar, ej. "peso 87,75kg"'
+            placeholder={
+              hasImages
+                ? "Añade contexto (opcional)…"
+                : 'Describe qué quieres registrar, ej. "peso 87,75kg"'
+            }
             value={text}
             onChange={(e) => setText(e.target.value)}
             disabled={loading}
