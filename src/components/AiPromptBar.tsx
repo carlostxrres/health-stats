@@ -12,6 +12,7 @@ import {
 import { apiClient } from "@/lib/api-client";
 import { localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
 import { compressImageToBase64 } from "@/lib/imageCompression";
+import { extractEarliestEatenAt } from "@/lib/imageExif";
 
 const MAX_IMAGES = 4;
 
@@ -44,13 +45,21 @@ export function AiPromptBar({
         if (images.length > MAX_IMAGES) {
           throw new Error(`Máximo ${MAX_IMAGES} fotos por análisis.`);
         }
-        const compressed = await Promise.all(images.map((img) => compressImageToBase64(img.file)));
+        const files = images.map((img) => img.file);
+        const [compressed, exifEatenAt] = await Promise.all([
+          Promise.all(files.map((file) => compressImageToBase64(file))),
+          extractEarliestEatenAt(files),
+        ]);
         const res = await apiClient.post<{ type: "meal"; data: Record<string, unknown> }>(
           "/ai/parse-meal-photo",
           { text: trimmed || undefined, now, images: compressed },
         );
         type = res.type;
-        data = { ...res.data, photos: images.map((img) => ({ storagePath: img.storagePath })) };
+        data = {
+          ...res.data,
+          eatenAt: exifEatenAt ?? res.data.eatenAt,
+          photos: images.map((img) => ({ storagePath: img.storagePath })),
+        };
       } else {
         const res = await apiClient.post<{ type: EntryTypeCode; data: unknown }>(
           "/ai/parse-entry",
