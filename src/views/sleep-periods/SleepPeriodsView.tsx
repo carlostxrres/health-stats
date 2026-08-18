@@ -9,6 +9,9 @@ import {
   ChartTooltip,
 } from "@/components/ui/chart";
 import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { apiClient } from "@/lib/api-client";
 import { AXIS_TICKS, formatBoundaryOffset, splitByBoundaryDay } from "@/lib/dayBoundary";
 import { enumerateDays, formatDayTick, isWeekend, localDayKey } from "@/lib/localTime";
@@ -24,7 +27,8 @@ const chartConfig = {
 export function SleepPeriodsView() {
   const [sessions, setSessions] = useState<SleepSession[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [boundaryHour, setBoundaryHour] = useState(0);
+  const [boundaryHour, setBoundaryHour] = useState(18);
+  const [excludeNaps, setExcludeNaps] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -44,7 +48,10 @@ export function SleepPeriodsView() {
   }, []);
 
   const { chartData, sessionsByDay, maxSessionsPerDay } = useMemo(() => {
-    const rows = (sessions ?? []).flatMap((session): SleepPeriodRow[] => {
+    const filteredSessions = excludeNaps
+      ? (sessions ?? []).filter((session) => !session.isNap)
+      : (sessions ?? []);
+    const rows = filteredSessions.flatMap((session): SleepPeriodRow[] => {
       const segments = splitByBoundaryDay(
         { start: session.wentToBedAt, end: session.wokeUpAt },
         boundaryHour,
@@ -96,7 +103,7 @@ export function SleepPeriodsView() {
     });
 
     return { chartData, sessionsByDay, maxSessionsPerDay };
-  }, [sessions, boundaryHour]);
+  }, [sessions, boundaryHour, excludeNaps]);
 
   if (error) {
     return <p className="p-4 text-sm text-destructive">{error}</p>;
@@ -117,15 +124,23 @@ export function SleepPeriodsView() {
   }
 
   return (
-    <div className="flex w-full max-w-3xl flex-col gap-4 p-4">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+    <div className="flex w-full max-w-3xl flex-col gap-2 p-4">
+      <div className="flex flex-wrap justify-between gap-2 pb-4">
         <div>
           <h1 className="font-heading text-lg font-medium">Sleep periods</h1>
           <p className="text-sm text-muted-foreground">
             A qué horas te acuestas y te levantas cada día, para ver lo regulares que son.
           </p>
         </div>
-        <BoundaryHourSelect value={boundaryHour} onChange={setBoundaryHour} />
+
+        <div className="flex gap-4 items-start pt-2">
+          <BoundaryHourSelect value={boundaryHour} onChange={setBoundaryHour} />
+          <Separator orientation="vertical" />
+          <div className="flex  gap-2">
+            <Label htmlFor="exclude-naps">Excluir siestas</Label>
+            <Switch id="exclude-naps" checked={excludeNaps} onCheckedChange={setExcludeNaps} />
+          </div>
+        </div>
       </div>
       <ChartLegendContent config={chartConfig} />
       <ChartContainer config={chartConfig} className="aspect-auto h-[60vh] w-full">
