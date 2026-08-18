@@ -8,6 +8,7 @@ import {
   ChartLegendContent,
   ChartTooltip,
 } from "@/components/ui/chart";
+import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { apiClient } from "@/lib/api-client";
 import { AXIS_TICKS, formatBoundaryOffset, splitByBoundaryDay } from "@/lib/dayBoundary";
 import { enumerateDays, formatDayTick, isWeekend, localDayKey } from "@/lib/localTime";
@@ -106,7 +107,13 @@ export function SleepPeriodsView() {
   }
 
   if (chartData.length === 0) {
-    return <p className="p-4 text-sm text-muted-foreground">Todavía no hay registros de sueño.</p>;
+    return (
+      <Empty className="m-4">
+        <EmptyHeader>
+          <EmptyTitle>Todavía no hay registros de sueño.</EmptyTitle>
+        </EmptyHeader>
+      </Empty>
+    );
   }
 
   return (

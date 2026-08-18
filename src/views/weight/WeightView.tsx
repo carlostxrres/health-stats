@@ -8,6 +8,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { apiClient } from "@/lib/api-client";
 import { loess } from "@/lib/loess";
 
@@ -102,7 +103,13 @@ export function WeightView() {
   }
 
   if (points.length === 0) {
-    return <p className="p-4 text-sm text-muted-foreground">Todavía no hay registros de peso.</p>;
+    return (
+      <Empty className="m-4">
+        <EmptyHeader>
+          <EmptyTitle>Todavía no hay registros de peso.</EmptyTitle>
+        </EmptyHeader>
+      </Empty>
+    );
   }
 
   const trend = loess(points);

@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Field } from "@/components/forms/Field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -153,9 +154,11 @@ export function LogsPage() {
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       {!loading && !error && items.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">
-          No hay entradas para estos filtros.
-        </p>
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>No hay entradas para estos filtros.</EmptyTitle>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <Table>
           <TableHeader>

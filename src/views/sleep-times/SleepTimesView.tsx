@@ -2,6 +2,7 @@ import type { SleepSession } from "@shared/types";
 import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { type ChartConfig, ChartContainer, ChartTooltip } from "@/components/ui/chart";
+import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { apiClient } from "@/lib/api-client";
 import { formatDayLabel, formatDayTick, localClock, localDayKey } from "@/lib/localTime";
 
@@ -128,7 +129,13 @@ export function SleepTimesView() {
   }
 
   if (chartData.length === 0) {
-    return <p className="p-4 text-sm text-muted-foreground">Todavía no hay registros de sueño.</p>;
+    return (
+      <Empty className="m-4">
+        <EmptyHeader>
+          <EmptyTitle>Todavía no hay registros de sueño.</EmptyTitle>
+        </EmptyHeader>
+      </Empty>
+    );
   }
 
   return (

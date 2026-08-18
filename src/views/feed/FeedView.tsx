@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { FeedPost } from "./FeedPost";
 import { createFeedLoader } from "./feedItems";
 import type { FeedItem } from "./types";
@@ -67,9 +68,11 @@ export function FeedView() {
       {items.length === 0 && loading && <p className="text-sm text-muted-foreground">Cargando…</p>}
 
       {items.length === 0 && !loading && !error && (
-        <p className="py-8 text-center text-sm text-muted-foreground">
-          Todavía no hay nada que mostrar.
-        </p>
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>Todavía no hay nada que mostrar.</EmptyTitle>
+          </EmptyHeader>
+        </Empty>
       )}
 
       <div className="flex flex-col gap-4">
