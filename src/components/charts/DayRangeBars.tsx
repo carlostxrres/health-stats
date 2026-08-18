@@ -1,10 +1,11 @@
 import { DefaultZIndexes, useXAxisScale, useYAxisScale, ZIndexLayer } from "recharts";
-import type { ChartDataRow } from "./types";
+
+export type ChartDataRow = Record<string, string | [number, number] | boolean>;
 
 export const BAR_WIDTH = 16;
 
 // Recharts dodges sibling <Bar> series horizontally by default, which is
-// exactly wrong here: segments split from the same or different sessions
+// exactly wrong here: segments split from the same or different sources
 // onto the same day column should all share one x position, not fan out
 // side by side. Drawing them ourselves — reading pixel coordinates straight
 // from the chart's own axis scales via useXAxisScale/useYAxisScale — sidesteps
@@ -16,12 +17,14 @@ export const BAR_WIDTH = 16;
 // which lands it *behind* the tooltip's hover cursor (zIndex 200) and the
 // cursor band ends up covering the bars. Using the same zIndex a real <Bar>
 // would use keeps paint order correct.
-export function SleepBars({
+export function DayRangeBars({
   chartData,
   maxSegments,
+  getFill,
 }: {
   chartData: ChartDataRow[];
   maxSegments: number;
+  getFill: (row: ChartDataRow, segmentIndex: number) => string;
 }) {
   const xScale = useXAxisScale();
   const yScale = useYAxisScale();
@@ -34,7 +37,6 @@ export function SleepBars({
         return Array.from({ length: maxSegments }, (_, index) => {
           const range = row[`seg${index}`] as [number, number] | undefined;
           if (!range) return null;
-          const isWeekendEnd = row[`seg${index}Weekend`];
           const y1 = yScale(range[0]);
           const y2 = yScale(range[1]);
           if (y1 == null || y2 == null) return null;
@@ -47,7 +49,7 @@ export function SleepBars({
               width={BAR_WIDTH}
               height={Math.abs(y2 - y1)}
               rx={4}
-              fill={isWeekendEnd ? "var(--color-sleepWeekend)" : "var(--color-sleep)"}
+              fill={getFill(row, index)}
             />
           );
         });

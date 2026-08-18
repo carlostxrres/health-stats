@@ -98,19 +98,49 @@ export function formatDayLabel(day: string) {
   });
 }
 
+// "YYYY-MM-DD" from a Date's local Y/M/D — for pure calendar-date values
+// (e.g. from a date-picker) that carry no timezone conversion of their own,
+// as opposed to localDayKey(iso) which converts an absolute instant.
+export function dayKeyFromDate(date: Date) {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 // "YYYY-MM-DD" `delta` calendar days from `day`. Parses/reformats using the
 // runtime's local zone; safe because both steps use the same implicit zone,
 // so the calendar date never shifts (same reasoning as formatDayTick).
 export function addDays(day: string, delta: number) {
   const date = new Date(`${day}T00:00:00`);
   date.setDate(date.getDate() + delta);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  return dayKeyFromDate(date);
 }
 
 export function isWeekend(day: string) {
   const dayOfWeek = new Date(`${day}T00:00:00`).getDay();
   return dayOfWeek === 0 || dayOfWeek === 6;
+}
+
+// Same reasoning as getDisplayTimeZone(): no settings screen yet, so this is
+// the one place a future one would plug in a stored week-start preference.
+// Matches Date#getDay()'s convention (0=Sun..6=Sat).
+const DEFAULT_WEEK_START_DAY = 1; // Monday
+
+export function getWeekStartDay(): number {
+  return DEFAULT_WEEK_START_DAY;
+}
+
+// The 7 day-keys (in order) of the week containing `day`, starting on
+// `weekStartDay`.
+export function getWeekDays(day: string, weekStartDay: number = getWeekStartDay()): string[] {
+  const date = new Date(`${day}T00:00:00`);
+  const diff = (date.getDay() - weekStartDay + 7) % 7;
+  const start = addDays(day, -diff);
+  return Array.from({ length: 7 }, (_, i) => addDays(start, i));
+}
+
+export function formatWeekRangeLabel(weekDays: string[]) {
+  const [start, end] = [weekDays[0], weekDays[weekDays.length - 1]];
+  return `${formatDayTick(start)} – ${formatDayLabel(end)}`;
 }
 
 // Every calendar day from `startDay` to `endDay`, inclusive.

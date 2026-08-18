@@ -8,5 +8,3 @@ export type SleepPeriodRow = {
   isPartial: boolean;
   isWeekendEnd: boolean;
 };
-
-export type ChartDataRow = Record<string, string | [number, number] | boolean>;

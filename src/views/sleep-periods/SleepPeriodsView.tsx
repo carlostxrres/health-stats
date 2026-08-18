@@ -1,6 +1,7 @@
 import type { SleepSession } from "@shared/types";
 import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { BAR_WIDTH, type ChartDataRow, DayRangeBars } from "@/components/charts/DayRangeBars";
 import {
   type ChartConfig,
   ChartContainer,
@@ -8,12 +9,11 @@ import {
   ChartTooltip,
 } from "@/components/ui/chart";
 import { apiClient } from "@/lib/api-client";
+import { AXIS_TICKS, formatBoundaryOffset, splitByBoundaryDay } from "@/lib/dayBoundary";
 import { enumerateDays, formatDayTick, isWeekend, localDayKey } from "@/lib/localTime";
 import { BoundaryHourSelect } from "./BoundaryHourSelect";
-import { AXIS_TICKS, formatBoundaryOffset, splitByBoundaryDay } from "./boundaryDay";
-import { BAR_WIDTH, SleepBars } from "./SleepBars";
 import { SleepPeriodTooltipContent } from "./SleepPeriodTooltipContent";
-import type { ChartDataRow, SleepPeriodRow } from "./types";
+import type { SleepPeriodRow } from "./types";
 
 const chartConfig = {
   sleep: { label: "Entre semana", color: "var(--chart-3)" },
@@ -44,7 +44,10 @@ export function SleepPeriodsView() {
 
   const { chartData, sessionsByDay, maxSessionsPerDay } = useMemo(() => {
     const rows = (sessions ?? []).flatMap((session): SleepPeriodRow[] => {
-      const segments = splitByBoundaryDay(session, boundaryHour);
+      const segments = splitByBoundaryDay(
+        { start: session.wentToBedAt, end: session.wokeUpAt },
+        boundaryHour,
+      );
       const isWeekendEnd = isWeekend(localDayKey(session.wokeUpAt));
       return segments.map((segment, index) => ({
         id: `${session.id}:${index}`,
@@ -150,7 +153,13 @@ export function SleepPeriodsView() {
             )}
           />
           <Bar dataKey="seg0" fill="transparent" maxBarSize={BAR_WIDTH} isAnimationActive={false} />
-          <SleepBars chartData={chartData} maxSegments={maxSessionsPerDay} />
+          <DayRangeBars
+            chartData={chartData}
+            maxSegments={maxSessionsPerDay}
+            getFill={(row, index) =>
+              row[`seg${index}Weekend`] ? "var(--color-sleepWeekend)" : "var(--color-sleep)"
+            }
+          />
         </BarChart>
       </ChartContainer>
     </div>

@@ -11,10 +11,8 @@ import {
   AttachmentTitle,
 } from "@/components/ui/attachment";
 import { Button } from "@/components/ui/button";
+import { PHOTOS_BUCKET, SIGNED_URL_TTL_SECONDS } from "@/lib/photoStorage";
 import { supabase } from "@/lib/supabase";
-
-const PHOTOS_BUCKET = "health-photos";
-const SIGNED_URL_TTL_SECONDS = 60 * 60;
 
 export type UploadedPhotoFile = { storagePath: string; file: File };
 
