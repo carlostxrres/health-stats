@@ -12,7 +12,7 @@ export function SleepPost({ session }: { session: SleepSession }) {
   return (
     <PostCard
       icon={Moon}
-      verb={`durmió${session.isNap ? " una siesta" : ""}`}
+      verb={`Durmió${session.isNap ? " una siesta" : ""}`}
       occurredAt={session.wentToBedAt}
     >
       <p className="font-medium text-foreground">

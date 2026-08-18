@@ -6,7 +6,7 @@ import { PostPhotoCarousel } from "./PostPhotoCarousel";
 
 export function MealPost({ meal }: { meal: MealWithDetails }) {
   return (
-    <PostCard icon={Utensils} verb="comió" occurredAt={meal.eatenAt}>
+    <PostCard icon={Utensils} verb="Comió" occurredAt={meal.eatenAt}>
       <p className="font-medium text-foreground">{meal.title}</p>
       {meal.location && (
         <p className="flex items-center gap-1 text-sm text-muted-foreground">

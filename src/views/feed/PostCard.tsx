@@ -28,8 +28,7 @@ export function PostCard({
         </Avatar>
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <div className="flex flex-wrap items-center text-sm font-medium text-foreground">
-            {displayName && <span>{displayName}</span>}
-            &nbsp;
+            {displayName && <span>{displayName}&nbsp;</span>}
             <span>{displayName ? verb.toLowerCase() : verb}</span>
             &nbsp;
             <span className="text-muted-foreground">· {formatPostDate(occurredAt)}</span>
