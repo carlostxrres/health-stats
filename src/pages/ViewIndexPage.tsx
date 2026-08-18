@@ -5,7 +5,7 @@ export function ViewIndexPage() {
     <Empty className="mx-auto max-w-lg">
       <EmptyHeader>
         <EmptyTitle>Selecciona una vista</EmptyTitle>
-        <EmptyDescription>Elige una vista arriba para ver tus datos.</EmptyDescription>
+        <EmptyDescription>Elige una vista en el menú lateral.</EmptyDescription>
       </EmptyHeader>
     </Empty>
   );

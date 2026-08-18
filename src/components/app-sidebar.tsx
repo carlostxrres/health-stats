@@ -1,6 +1,16 @@
-import { Activity, Home, LineChart, List, LogIn, LogOut, Settings, SquarePlus } from "lucide-react";
+import {
+  Activity,
+  ChevronRight,
+  Home,
+  LineChart,
+  List,
+  LogIn,
+  LogOut,
+  Settings,
+  SquarePlus,
+} from "lucide-react";
 import type * as React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   AlertDialog,
@@ -13,6 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Sidebar,
   SidebarContent,
@@ -23,17 +34,20 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
+import { VIEWS } from "@/views/registry";
 
 const NAV_ITEMS = [
   { to: "/", label: "Inicio", icon: Home, end: true },
   { to: "/log", label: "Registrar", icon: SquarePlus, end: false },
   { to: "/logs", label: "Registros", icon: List, end: false },
-  { to: "/view", label: "Vistas", icon: LineChart, end: false },
 ] as const;
 
 const SETTINGS_ITEM = { to: "/settings", label: "Ajustes", icon: Settings, end: false } as const;
@@ -48,10 +62,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { pathname } = useLocation();
   const { isMobile, setOpenMobile } = useSidebar();
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [viewsOpen, setViewsOpen] = useState(() => pathname.startsWith("/view"));
 
   function closeMobileNav() {
     if (isMobile) setOpenMobile(false);
   }
+
+  // AppSidebar stays mounted across route changes, so `defaultOpen` alone
+  // only captures the initial route — this keeps the group in sync whenever
+  // navigation (not just a manual toggle) lands on a /view/* route, without
+  // fighting the user if they collapse it again afterwards.
+  useEffect(() => {
+    if (pathname.startsWith("/view")) setViewsOpen(true);
+  }, [pathname]);
 
   return (
     <Sidebar {...props}>
@@ -83,6 +106,38 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              <SidebarMenuItem>
+                <Collapsible open={viewsOpen} onOpenChange={setViewsOpen}>
+                  <CollapsibleTrigger
+                    render={
+                      <SidebarMenuButton
+                        isActive={pathname.startsWith("/view")}
+                        className="group/collapsible"
+                      />
+                    }
+                  >
+                    <LineChart />
+                    <span>Vistas</span>
+                    <ChevronRight className="ml-auto transition-transform duration-200 group-data-[panel-open]/collapsible:rotate-90" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {VIEWS.map((view) => (
+                        <SidebarMenuSubItem key={view.slug}>
+                          <SidebarMenuSubButton
+                            isActive={pathname === `/view/${view.slug}`}
+                            onClick={closeMobileNav}
+                            render={<NavLink to={`/view/${view.slug}`} />}
+                          >
+                            <view.icon />
+                            <span>{view.name}</span>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </Collapsible>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
