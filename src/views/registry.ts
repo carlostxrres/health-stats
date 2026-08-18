@@ -22,7 +22,7 @@ export const VIEWS: ViewDefinition[] = [
   },
   {
     slug: "weight",
-    name: "Body weight (simple)",
+    name: "Body weight",
     icon: Scale,
     component: WeightView,
   },
