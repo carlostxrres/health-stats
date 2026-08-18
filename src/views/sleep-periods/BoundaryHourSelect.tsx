@@ -1,4 +1,4 @@
-import { Field } from "@/components/forms/Field";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -16,8 +16,10 @@ export function BoundaryHourSelect({
   onChange: (value: number) => void;
 }) {
   return (
-    <Field label="Inicio del día">
+    <div className="flex gap-2 lg:flex-col">
+      <Label htmlFor="boundary-hour-select">Inicio del día</Label>
       <Select
+        id="boundary-hour-select"
         items={BOUNDARY_HOUR_ITEMS}
         value={value}
         onValueChange={(next) => onChange(next ?? 0)}
@@ -33,6 +35,6 @@ export function BoundaryHourSelect({
           ))}
         </SelectContent>
       </Select>
-    </Field>
+    </div>
   );
 }

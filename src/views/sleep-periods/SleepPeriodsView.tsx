@@ -133,10 +133,10 @@ export function SleepPeriodsView() {
           </p>
         </div>
 
-        <div className="flex gap-4 items-start pt-2">
+        <div className="flex gap-4 pt-2 items-center lg:items-start">
           <BoundaryHourSelect value={boundaryHour} onChange={setBoundaryHour} />
           <Separator orientation="vertical" />
-          <div className="flex  gap-2">
+          <div className="flex gap-2 lg:flex-col">
             <Label htmlFor="exclude-naps">Excluir siestas</Label>
             <Switch id="exclude-naps" checked={excludeNaps} onCheckedChange={setExcludeNaps} />
           </div>
