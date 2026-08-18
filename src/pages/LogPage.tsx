@@ -141,7 +141,7 @@ export function LogPage() {
   }
 
   return (
-    <div className={`flex max-w-lg flex-col gap-4 p-4 md:mx-auto ${!id ? "pb-24" : ""}`}>
+    <div className={`flex w-lg flex-col gap-4 p-4 md:mx-auto ${!id ? "pb-24" : ""}`}>
       <Card>
         <CardHeader>
           <CardTitle>{id ? "Editar entrada" : "Nueva entrada"}</CardTitle>
