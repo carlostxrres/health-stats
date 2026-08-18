@@ -12,6 +12,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
@@ -33,6 +34,11 @@ function isNavItemActive(pathname: string, item: { to: string; end: boolean }) {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { session, loading } = useAuth();
   const { pathname } = useLocation();
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  function closeMobileNav() {
+    if (isMobile) setOpenMobile(false);
+  }
 
   return (
     <Sidebar {...props}>
@@ -56,6 +62,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <SidebarMenuItem key={item.to}>
                   <SidebarMenuButton
                     isActive={isNavItemActive(pathname, item)}
+                    onClick={closeMobileNav}
                     render={<NavLink to={item.to} />}
                   >
                     <item.icon />
@@ -72,6 +79,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton
               isActive={isNavItemActive(pathname, SETTINGS_ITEM)}
+              onClick={closeMobileNav}
               render={<NavLink to={SETTINGS_ITEM.to} />}
             >
               <SETTINGS_ITEM.icon />
@@ -86,7 +94,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <span>Cerrar sesión</span>
                 </SidebarMenuButton>
               ) : (
-                <SidebarMenuButton render={<NavLink to="/login" />}>
+                <SidebarMenuButton onClick={closeMobileNav} render={<NavLink to="/login" />}>
                   <LogIn />
                   <span>Iniciar sesión</span>
                 </SidebarMenuButton>
