@@ -5,6 +5,17 @@ import { requireUser, UnauthorizedError } from "./auth.js";
 type Method = "GET" | "POST" | "DELETE" | "PATCH";
 type Handler = (req: VercelRequest, res: VercelResponse) => Promise<void>;
 
+const DEFAULT_LIST_LIMIT = 50;
+const MAX_LIST_LIMIT = 100;
+
+// Parses an optional `?limit=` query param for list endpoints, clamped to a
+// sane range so a client can't force an unbounded query.
+export function parseLimit(raw: unknown, fallback = DEFAULT_LIST_LIMIT): number {
+  const value = typeof raw === "string" ? Number(raw) : Number.NaN;
+  if (!Number.isFinite(value) || value < 1) return fallback;
+  return Math.min(Math.trunc(value), MAX_LIST_LIMIT);
+}
+
 // Wraps a Vercel function with the auth guard, method dispatch, and a single
 // place to turn thrown errors into HTTP responses.
 export function createHandler(methods: Partial<Record<Method, Handler>>) {

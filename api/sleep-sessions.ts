@@ -3,11 +3,12 @@ import { and, desc, eq, gte, lt } from "drizzle-orm";
 import { sleepSessions } from "../db/schema/index.js";
 import { sleepSessionInputSchema } from "../shared/validation/index.js";
 import { db } from "./_lib/db.js";
-import { createHandler } from "./_lib/http.js";
+import { createHandler, parseLimit } from "./_lib/http.js";
 
 async function list(req: VercelRequest, res: VercelResponse) {
   const from = typeof req.query.from === "string" ? req.query.from : undefined;
   const to = typeof req.query.to === "string" ? req.query.to : undefined;
+  const limit = parseLimit(req.query.limit);
 
   const rows = await db.query.sleepSessions.findMany({
     where: and(
@@ -15,7 +16,7 @@ async function list(req: VercelRequest, res: VercelResponse) {
       to ? lt(sleepSessions.wentToBedAt, to) : undefined,
     ),
     orderBy: desc(sleepSessions.wentToBedAt),
-    limit: 50,
+    limit,
   });
   res.status(200).json(rows);
 }

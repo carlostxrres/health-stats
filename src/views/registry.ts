@@ -1,5 +1,6 @@
-import { AlarmClock, BedDouble, CalendarDays, Scale } from "lucide-react";
+import { AlarmClock, BedDouble, CalendarDays, Rss, Scale } from "lucide-react";
 import type { ComponentType } from "react";
+import { FeedView } from "@/views/feed/FeedView";
 import { SleepPeriodsView } from "@/views/sleep-periods/SleepPeriodsView";
 import { SleepTimesView } from "@/views/sleep-times/SleepTimesView";
 import { WeekView } from "@/views/week/WeekView";
@@ -13,6 +14,12 @@ export type ViewDefinition = {
 };
 
 export const VIEWS: ViewDefinition[] = [
+  {
+    slug: "feed",
+    name: "Feed",
+    icon: Rss,
+    component: FeedView,
+  },
   {
     slug: "weight",
     name: "Body weight (simple)",

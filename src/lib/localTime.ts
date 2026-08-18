@@ -153,3 +153,48 @@ export function enumerateDays(startDay: string, endDay: string) {
   }
   return days;
 }
+
+// Whole calendar days from `fromDay` to `toDay` (both "YYYY-MM-DD"). Parses
+// with the same "T00:00:00" trick as addDays/formatDayTick above — safe
+// because both sides use the same implicit runtime zone.
+function dayDiff(fromDay: string, toDay: string) {
+  const from = new Date(`${fromDay}T00:00:00`).getTime();
+  const to = new Date(`${toDay}T00:00:00`).getTime();
+  return Math.round((to - from) / (24 * 60 * 60 * 1000));
+}
+
+// A feed-post timestamp, formatted per the app's social-feed convention:
+// "hoy/ayer/hace dos días/el lunes/el 8 de agosto/el 30 de diciembre de
+// 2025" followed by " a las hh:mm". The day-name cases (hoy/ayer/hace dos
+// días) are fixed Spanish phrases rather than Intl.RelativeTimeFormat
+// output, because RelativeTimeFormat spells "hace dos días" as "hace 2
+// días" (digit, not word) — everything else here still goes through Intl.
+export function formatPostDate(iso: string, timeZone: string = getDisplayTimeZone()) {
+  const itemDay = localDayKey(iso, timeZone);
+  const todayDay = localDayKey(new Date().toISOString(), timeZone);
+  const diff = dayDiff(itemDay, todayDay);
+
+  let dayLabel: string;
+  if (diff === 0) {
+    dayLabel = "hoy";
+  } else if (diff === 1) {
+    dayLabel = "ayer";
+  } else if (diff === 2) {
+    dayLabel = "hace dos días";
+  } else if (diff >= 3 && diff <= 6) {
+    const weekday = new Date(`${itemDay}T00:00:00`).toLocaleDateString("es-ES", {
+      weekday: "long",
+    });
+    dayLabel = `el ${weekday}`;
+  } else {
+    const includeYear = itemDay.slice(0, 4) !== todayDay.slice(0, 4);
+    const date = new Date(`${itemDay}T00:00:00`).toLocaleDateString("es-ES", {
+      day: "numeric",
+      month: "long",
+      year: includeYear ? "numeric" : undefined,
+    });
+    dayLabel = `el ${date}`;
+  }
+
+  return `${dayLabel} a las ${localClock(iso, timeZone)}`;
+}
