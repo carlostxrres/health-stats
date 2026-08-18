@@ -1,45 +1,80 @@
-// This app is single-user (see README), so rather than tracking a
-// per-user timezone preference, times are displayed in a fixed zone
-// regardless of the viewing device's own timezone. Change this if you
-// move. Timestamps round-trip through Postgres as whatever offset the DB
+// This app is single-user (see README) and doesn't have a settings screen
+// yet, so the display timezone is this hardcoded default for now. Once a
+// settings screen exists, getDisplayTimeZone() is the one place to swap in
+// the stored user preference — every function below already takes an
+// optional `timeZone` override and falls back to it, so nothing else needs
+// to change.
+//
+// Timestamps round-trip through Postgres as whatever offset the DB
 // session's timezone happens to use (typically UTC) — not the original
 // entry's offset — so this must be an explicit conversion, not something
 // read off the viewing device's own clock.
-export const DISPLAY_TIME_ZONE = "Europe/Madrid";
+const DEFAULT_TIME_ZONE = "Europe/Madrid";
 
-const dayKeyFormatter = new Intl.DateTimeFormat("en-CA", {
-  timeZone: DISPLAY_TIME_ZONE,
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
-
-const clockFormatter = new Intl.DateTimeFormat("es-ES", {
-  timeZone: DISPLAY_TIME_ZONE,
-  hour: "2-digit",
-  minute: "2-digit",
-});
-
-const clockPartsFormatter = new Intl.DateTimeFormat("en-US", {
-  timeZone: DISPLAY_TIME_ZONE,
-  hour: "2-digit",
-  minute: "2-digit",
-  second: "2-digit",
-  hourCycle: "h23",
-});
-
-// "YYYY-MM-DD" in DISPLAY_TIME_ZONE (en-CA formats dates in that order).
-export function localDayKey(iso: string) {
-  return dayKeyFormatter.format(new Date(iso));
+export function getDisplayTimeZone(): string {
+  return DEFAULT_TIME_ZONE;
 }
 
-export function localClock(iso: string) {
-  return clockFormatter.format(new Date(iso));
+// Intl.DateTimeFormat instances are bound to a fixed timeZone at
+// construction, so they're cached per zone rather than created once at
+// module scope — cheap now (one zone), and correct once the zone can vary.
+function cachedFormatter(
+  cache: Map<string, Intl.DateTimeFormat>,
+  timeZone: string,
+  create: () => Intl.DateTimeFormat,
+) {
+  let formatter = cache.get(timeZone);
+  if (!formatter) {
+    formatter = create();
+    cache.set(timeZone, formatter);
+  }
+  return formatter;
 }
 
-// Hour-of-day (0-24, with fractional minutes/seconds) in DISPLAY_TIME_ZONE.
-export function localHourOfDay(iso: string) {
-  const parts = clockPartsFormatter.formatToParts(new Date(iso));
+const dayKeyFormatters = new Map<string, Intl.DateTimeFormat>();
+const clockFormatters = new Map<string, Intl.DateTimeFormat>();
+const clockPartsFormatters = new Map<string, Intl.DateTimeFormat>();
+
+// "YYYY-MM-DD" in `timeZone` (en-CA formats dates in that order).
+export function localDayKey(iso: string, timeZone: string = getDisplayTimeZone()) {
+  const formatter = cachedFormatter(
+    dayKeyFormatters,
+    timeZone,
+    () =>
+      new Intl.DateTimeFormat("en-CA", {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }),
+  );
+  return formatter.format(new Date(iso));
+}
+
+export function localClock(iso: string, timeZone: string = getDisplayTimeZone()) {
+  const formatter = cachedFormatter(
+    clockFormatters,
+    timeZone,
+    () => new Intl.DateTimeFormat("es-ES", { timeZone, hour: "2-digit", minute: "2-digit" }),
+  );
+  return formatter.format(new Date(iso));
+}
+
+// Hour-of-day (0-24, with fractional minutes/seconds) in `timeZone`.
+export function localHourOfDay(iso: string, timeZone: string = getDisplayTimeZone()) {
+  const formatter = cachedFormatter(
+    clockPartsFormatters,
+    timeZone,
+    () =>
+      new Intl.DateTimeFormat("en-US", {
+        timeZone,
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hourCycle: "h23",
+      }),
+  );
+  const parts = formatter.formatToParts(new Date(iso));
   const get = (type: string) => Number(parts.find((part) => part.type === type)?.value ?? 0);
   return get("hour") + get("minute") / 60 + get("second") / 3600;
 }
