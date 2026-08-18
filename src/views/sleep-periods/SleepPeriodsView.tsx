@@ -16,7 +16,7 @@ import {
 // normal night's sleep (evening to next morning) never wraps around the
 // edge of the axis. Change this if your bedtime tends to fall outside the
 // 18:00-18:00 window.
-const DAY_BOUNDARY_HOUR = 0;
+const DAY_BOUNDARY_HOUR = 18;
 
 type SleepPeriodRow = {
   id: string;
