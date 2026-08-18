@@ -2,10 +2,24 @@ import { addDays, localDayKey, localHourOfDay } from "@/lib/localTime";
 
 export const AXIS_TICKS = [0, 3, 6, 9, 12, 15, 18, 21, 24];
 
+// Wraps (clockHour - boundaryHour) into [0, 24) — the core boundary-relative
+// axis math shared by hoursSinceBoundary (from a timestamp) and
+// clockHourToAxisValue (from a plain clock hour) below.
+function wrapToBoundary(clockHour: number, boundaryHour: number) {
+  const offset = clockHour - boundaryHour;
+  return offset < 0 ? offset + 24 : offset;
+}
+
 // Hours + fraction since boundaryHour.
 export function hoursSinceBoundary(iso: string, boundaryHour: number) {
-  const offset = localHourOfDay(iso) - boundaryHour;
-  return offset < 0 ? offset + 24 : offset;
+  return wrapToBoundary(localHourOfDay(iso), boundaryHour);
+}
+
+// Converts a plain decimal clock hour (e.g. 22 for "22:00", 6.5 for "06:30")
+// — not tied to any specific day — into the same boundary-relative axis
+// space hoursSinceBoundary produces, for placing a fixed goal time on chart.
+export function clockHourToAxisValue(clockHour: number, boundaryHour: number) {
+  return wrapToBoundary(clockHour, boundaryHour);
 }
 
 // Converts an axis value (hours since boundaryHour) back into a clock time,

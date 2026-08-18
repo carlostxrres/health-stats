@@ -1,6 +1,15 @@
 import type { MetricEntry } from "@shared/types";
 import { useEffect, useState } from "react";
-import { CartesianGrid, ComposedChart, Line, Scatter, XAxis, YAxis } from "recharts";
+import {
+  CartesianGrid,
+  ComposedChart,
+  Line,
+  ReferenceArea,
+  ReferenceLine,
+  Scatter,
+  XAxis,
+  YAxis,
+} from "recharts";
 import {
   type ChartConfig,
   ChartContainer,
@@ -9,7 +18,10 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import { Toggle } from "@/components/ui/toggle";
+import { useSettings } from "@/hooks/useSettings";
 import { apiClient } from "@/lib/api-client";
+import { bmiWeightThresholds } from "@/lib/bmi";
 import { loess } from "@/lib/loess";
 
 type WeightPoint = { x: number; y: number };
@@ -18,6 +30,16 @@ const chartConfig: ChartConfig = {
   weight: { label: "Peso", color: "var(--chart-1)" },
   trend: { label: "Tendencia", color: "var(--chart-2)" },
 } satisfies ChartConfig;
+
+// Fixed semantic colors (blue/green/amber/red), independent of the user's
+// chosen chart hue — these bands communicate a real health-risk gradient, so
+// "obesidad" must stay reliably red-ish regardless of cosmetic preference.
+const BMI_BAND_COLORS = {
+  underweight: "oklch(0.7 0.15 250)",
+  normal: "oklch(0.7 0.15 145)",
+  overweight: "oklch(0.75 0.15 80)",
+  obese: "oklch(0.65 0.2 25)",
+} as const;
 
 function formatAxisDate(timestamp: number) {
   return new Date(timestamp).toLocaleDateString("es-ES", { day: "2-digit", month: "short" });
@@ -71,8 +93,10 @@ function formatTooltipDate(timestamp: number) {
 }
 
 export function WeightView() {
+  const { settings } = useSettings();
   const [points, setPoints] = useState<WeightPoint[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showBmi, setShowBmi] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -114,16 +138,68 @@ export function WeightView() {
 
   const trend = loess(points);
 
+  const heightCm = settings?.heightCm != null ? Number(settings.heightCm) : null;
+  const weightGoalMinKg =
+    settings?.weightGoalMinKg != null ? Number(settings.weightGoalMinKg) : null;
+  const weightGoalMaxKg =
+    settings?.weightGoalMaxKg != null ? Number(settings.weightGoalMaxKg) : null;
+  const bmiThresholds = showBmi && heightCm != null ? bmiWeightThresholds(heightCm) : null;
+
+  const domainValues = [
+    ...points.map((point) => point.y),
+    ...(weightGoalMinKg != null ? [weightGoalMinKg] : []),
+    ...(weightGoalMaxKg != null ? [weightGoalMaxKg] : []),
+    ...(bmiThresholds
+      ? [bmiThresholds.underweightMax, bmiThresholds.normalMax, bmiThresholds.overweightMax]
+      : []),
+  ];
+  const yDomain: [number, number] = [Math.min(...domainValues), Math.max(...domainValues)];
+
+  const activeConfig: ChartConfig = {
+    ...chartConfig,
+    ...(weightGoalMinKg != null
+      ? { goalMin: { label: "Peso mín. objetivo", color: "var(--chart-highlight)" } }
+      : {}),
+    ...(weightGoalMaxKg != null
+      ? { goalMax: { label: "Peso máx. objetivo", color: "var(--chart-highlight-2)" } }
+      : {}),
+    ...(bmiThresholds
+      ? {
+          bmiUnderweight: { label: "IMC infrapeso", color: BMI_BAND_COLORS.underweight },
+          bmiNormal: { label: "IMC normal", color: BMI_BAND_COLORS.normal },
+          bmiOverweight: { label: "IMC sobrepeso", color: BMI_BAND_COLORS.overweight },
+          bmiObese: { label: "IMC obesidad", color: BMI_BAND_COLORS.obese },
+        }
+      : {}),
+  };
+
   return (
     <div className="flex w-full max-w-3xl flex-col gap-4 p-4">
-      <div>
-        <h1 className="font-heading text-lg font-medium">Body weight (simple)</h1>
-        <p className="text-sm text-muted-foreground">
-          Cada punto es una medición registrada. La línea muestra la tendencia local.
-        </p>
+      <div className="flex flex-wrap justify-between gap-2">
+        <div>
+          <h1 className="font-heading text-lg font-medium">Body weight (simple)</h1>
+          <p className="text-sm text-muted-foreground">
+            Cada punto es una medición registrada. La línea muestra la tendencia local.
+          </p>
+        </div>
+        <div className="flex flex-col items-start gap-1 pt-2">
+          <Toggle
+            pressed={showBmi}
+            onPressedChange={setShowBmi}
+            disabled={heightCm == null}
+            variant="outline"
+          >
+            Mostrar IMC
+          </Toggle>
+          {heightCm == null && (
+            <p className="text-xs text-muted-foreground">
+              Añade tu altura en Ajustes para ver el IMC.
+            </p>
+          )}
+        </div>
       </div>
-      <ChartLegendContent config={chartConfig} />
-      <ChartContainer config={chartConfig} className="aspect-auto h-[60vh] w-full">
+      <ChartLegendContent config={activeConfig} />
+      <ChartContainer config={activeConfig} className="aspect-auto h-[60vh] w-full">
         <ComposedChart margin={{ left: 8, right: 16, top: 12, bottom: 0 }}>
           <CartesianGrid vertical={false} />
           <XAxis
@@ -139,13 +215,13 @@ export function WeightView() {
           <YAxis
             dataKey="y"
             type="number"
-            domain={["auto", "auto"]}
+            domain={yDomain}
             padding={{ top: 20, bottom: 20 }}
             tickLine={false}
             axisLine={false}
             tickMargin={8}
             width={56}
-            tickFormatter={(value) => `${value} kg`}
+            tickFormatter={(value) => `${Math.round(value * 100) / 100} kg`}
           />
           <ChartTooltip
             cursor={false}
@@ -197,6 +273,62 @@ export function WeightView() {
             dot={false}
             isAnimationActive={false}
           />
+          {bmiThresholds && (
+            <>
+              <ReferenceArea
+                y1={yDomain[0]}
+                y2={bmiThresholds.underweightMax}
+                fill={BMI_BAND_COLORS.underweight}
+                fillOpacity={0.15}
+                strokeOpacity={0}
+              />
+              <ReferenceArea
+                y1={bmiThresholds.underweightMax}
+                y2={bmiThresholds.normalMax}
+                fill={BMI_BAND_COLORS.normal}
+                fillOpacity={0.15}
+                strokeOpacity={0}
+              />
+              <ReferenceArea
+                y1={bmiThresholds.normalMax}
+                y2={bmiThresholds.overweightMax}
+                fill={BMI_BAND_COLORS.overweight}
+                fillOpacity={0.15}
+                strokeOpacity={0}
+              />
+              <ReferenceArea
+                y1={bmiThresholds.overweightMax}
+                y2={yDomain[1]}
+                fill={BMI_BAND_COLORS.obese}
+                fillOpacity={0.15}
+                strokeOpacity={0}
+              />
+            </>
+          )}
+          {weightGoalMinKg != null && (
+            <ReferenceLine
+              y={weightGoalMinKg}
+              stroke="var(--chart-highlight)"
+              strokeDasharray="4 4"
+              label={{
+                value: `Mín: ${weightGoalMinKg} kg`,
+                position: "insideBottomRight",
+                fontSize: 12,
+              }}
+            />
+          )}
+          {weightGoalMaxKg != null && (
+            <ReferenceLine
+              y={weightGoalMaxKg}
+              stroke="var(--chart-highlight-2)"
+              strokeDasharray="4 4"
+              label={{
+                value: `Máx: ${weightGoalMaxKg} kg`,
+                position: "insideTopRight",
+                fontSize: 12,
+              }}
+            />
+          )}
         </ComposedChart>
       </ChartContainer>
     </div>

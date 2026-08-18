@@ -1,6 +1,6 @@
 import type { SleepSession } from "@shared/types";
 import { useEffect, useMemo, useState } from "react";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, ReferenceLine, XAxis, YAxis } from "recharts";
 import { BAR_WIDTH, type ChartDataRow, DayRangeBars } from "@/components/charts/DayRangeBars";
 import {
   type ChartConfig,
@@ -12,8 +12,14 @@ import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { useSettings } from "@/hooks/useSettings";
 import { apiClient } from "@/lib/api-client";
-import { AXIS_TICKS, formatBoundaryOffset, splitByBoundaryDay } from "@/lib/dayBoundary";
+import {
+  AXIS_TICKS,
+  clockHourToAxisValue,
+  formatBoundaryOffset,
+  splitByBoundaryDay,
+} from "@/lib/dayBoundary";
 import { enumerateDays, formatDayTick, isWeekend, localDayKey } from "@/lib/localTime";
 import { BoundaryHourSelect } from "./BoundaryHourSelect";
 import { SleepPeriodTooltipContent } from "./SleepPeriodTooltipContent";
@@ -24,11 +30,27 @@ const chartConfig = {
   sleepWeekend: { label: "Fin de semana", color: "var(--chart-highlight)" },
 } satisfies ChartConfig;
 
+// Postgres `time` columns round-trip as "HH:MM:SS" strings.
+function parseClockHour(time: string): number {
+  const [h, m] = time.split(":").map(Number);
+  return h + m / 60;
+}
+
 export function SleepPeriodsView() {
+  const { settings } = useSettings();
   const [sessions, setSessions] = useState<SleepSession[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [boundaryHour, setBoundaryHour] = useState(18);
   const [excludeNaps, setExcludeNaps] = useState(true);
+
+  const bedtimeAxisValue =
+    settings?.bedtimeGoal != null
+      ? clockHourToAxisValue(parseClockHour(settings.bedtimeGoal), boundaryHour)
+      : null;
+  const wakeAxisValue =
+    settings?.wakeTimeGoal != null
+      ? clockHourToAxisValue(parseClockHour(settings.wakeTimeGoal), boundaryHour)
+      : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -182,6 +204,30 @@ export function SleepPeriodsView() {
               row[`seg${index}Weekend`] ? "var(--color-sleepWeekend)" : "var(--color-sleep)"
             }
           />
+          {bedtimeAxisValue != null && (
+            <ReferenceLine
+              y={bedtimeAxisValue}
+              stroke="var(--chart-highlight-3)"
+              strokeDasharray="4 4"
+              label={{
+                value: `Acostarme: ${settings?.bedtimeGoal?.slice(0, 5)}`,
+                position: "right",
+                fontSize: 12,
+              }}
+            />
+          )}
+          {wakeAxisValue != null && (
+            <ReferenceLine
+              y={wakeAxisValue}
+              stroke="var(--chart-highlight-4)"
+              strokeDasharray="4 4"
+              label={{
+                value: `Levantarme: ${settings?.wakeTimeGoal?.slice(0, 5)}`,
+                position: "right",
+                fontSize: 12,
+              }}
+            />
+          )}
         </BarChart>
       </ChartContainer>
     </div>

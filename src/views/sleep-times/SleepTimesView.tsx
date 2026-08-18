@@ -1,8 +1,9 @@
 import type { SleepSession } from "@shared/types";
 import { useEffect, useMemo, useState } from "react";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, ReferenceLine, XAxis, YAxis } from "recharts";
 import { type ChartConfig, ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import { useSettings } from "@/hooks/useSettings";
 import { apiClient } from "@/lib/api-client";
 import {
   formatDayLabel,
@@ -69,8 +70,10 @@ function SleepTooltipContent({
 }
 
 export function SleepTimesView() {
+  const { settings } = useSettings();
   const [sessions, setSessions] = useState<SleepSession[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const goalHours = settings?.sleepGoalMinutes != null ? settings.sleepGoalMinutes / 60 : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -192,6 +195,18 @@ export function SleepTimesView() {
               maxBarSize={24}
             />
           ))}
+          {goalHours != null && (
+            <ReferenceLine
+              y={goalHours}
+              stroke="var(--chart-highlight)"
+              strokeDasharray="4 4"
+              label={{
+                value: `Objetivo: ${formatHoursMinutes(goalHours)}`,
+                position: "insideTopRight",
+                fontSize: 12,
+              }}
+            />
+          )}
         </BarChart>
       </ChartContainer>
     </div>
