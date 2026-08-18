@@ -211,7 +211,7 @@ export function SleepPeriodsView() {
               strokeDasharray="4 4"
               label={{
                 value: `Acostarme: ${settings?.bedtimeGoal?.slice(0, 5)}`,
-                position: "right",
+                position: "insideBottomRight",
                 fontSize: 12,
               }}
             />
@@ -223,7 +223,7 @@ export function SleepPeriodsView() {
               strokeDasharray="4 4"
               label={{
                 value: `Levantarme: ${settings?.wakeTimeGoal?.slice(0, 5)}`,
-                position: "right",
+                position: "insideTopRight",
                 fontSize: 12,
               }}
             />
