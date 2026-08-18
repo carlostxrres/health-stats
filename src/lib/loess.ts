@@ -17,7 +17,10 @@ export function loess(points: LoessPoint[], bandwidth = 0.3): LoessPoint[] {
 
   return points.map((point) => {
     const distances = xs.map((x) => Math.abs(x - point.x));
-    const bandwidthDistance = [...distances].sort((a, b) => a - b)[windowSize - 1] || 1;
+    // Use the distance one past the window so the window's farthest point
+    // still gets a strictly positive tricube weight (tricube(1) === 0).
+    const sorted = [...distances].sort((a, b) => a - b);
+    const bandwidthDistance = sorted[Math.min(windowSize, n - 1)] || 1;
 
     let sumW = 0;
     let sumWX = 0;

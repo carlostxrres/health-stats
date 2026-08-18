@@ -165,7 +165,7 @@ function ChartTooltipContent({
                   style={{ backgroundColor: indicatorColor }}
                 />
               )}
-              <div className="flex flex-1 items-center justify-between leading-none">
+              <div className="flex flex-1 items-center justify-between gap-4 leading-none">
                 <span className="text-muted-foreground">{itemConfig?.label || item.name}</span>
                 {item.value !== undefined && (
                   <span className="font-mono font-medium tabular-nums text-foreground">

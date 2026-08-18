@@ -22,8 +22,47 @@ function formatAxisDate(timestamp: number) {
   return new Date(timestamp).toLocaleDateString("es-ES", { day: "2-digit", month: "short" });
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function startOfLocalDay(timestamp: number) {
+  const date = new Date(timestamp);
+  date.setHours(0, 0, 0, 0);
+  return date.getTime();
+}
+
+// Rounds a rough day-step up to a "nice" 1/2/5/10-times-a-power-of-ten value,
+// the same trick chart libraries use for picking readable tick intervals.
+function niceStepDays(roughStepDays: number) {
+  const magnitude = 10 ** Math.floor(Math.log10(roughStepDays));
+  const residual = roughStepDays / magnitude;
+  const niceResidual = residual <= 1 ? 1 : residual <= 2 ? 2 : residual <= 5 ? 5 : 10;
+  return niceResidual * magnitude;
+}
+
+// recharts' own "nice tick" algorithm rounds to nice numbers in raw
+// milliseconds, not calendar days, so ticks don't land on day boundaries and
+// look unevenly spaced once formatted as dates. Computing day-aligned ticks
+// ourselves keeps the axis genuinely proportional to time.
+function getNiceDayTicks(minX: number, maxX: number, targetCount = 5): number[] {
+  if (minX >= maxX) return [minX];
+
+  const totalDays = (maxX - minX) / DAY_MS;
+  const roughStepDays = Math.max(1, totalDays / (targetCount - 1));
+  const stepMs = Math.max(1, Math.round(niceStepDays(roughStepDays))) * DAY_MS;
+
+  const ticks: number[] = [];
+  let tick = startOfLocalDay(minX);
+  if (tick < minX) tick += stepMs;
+  for (; tick <= maxX; tick += stepMs) {
+    ticks.push(tick);
+  }
+  return ticks.length > 0 ? ticks : [minX, maxX];
+}
+
 function formatTooltipDate(timestamp: number) {
   return new Date(timestamp).toLocaleDateString("es-ES", {
+    minute: "2-digit",
+    hour: "2-digit",
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -84,6 +123,7 @@ export function WeightView() {
             dataKey="x"
             type="number"
             domain={["dataMin", "dataMax"]}
+            ticks={getNiceDayTicks(points[0].x, points[points.length - 1].x)}
             tickFormatter={formatAxisDate}
             tickLine={false}
             axisLine={false}
@@ -93,6 +133,7 @@ export function WeightView() {
             dataKey="y"
             type="number"
             domain={["auto", "auto"]}
+            padding={{ top: 20, bottom: 20 }}
             tickLine={false}
             axisLine={false}
             tickMargin={8}
@@ -117,7 +158,7 @@ export function WeightView() {
                   const x = tooltipPayload?.[0]?.payload?.x;
                   return typeof x === "number" ? formatTooltipDate(x) : "";
                 }}
-                formatter={(value) => `${Number(value).toFixed(1)} kg`}
+                formatter={(value) => `${Number(value).toFixed(2)} kg`}
               />
             )}
           />
