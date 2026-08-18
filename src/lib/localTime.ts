@@ -53,6 +53,17 @@ export function localDayKey(iso: string, timeZone: string = getDisplayTimeZone()
   return formatter.format(new Date(iso));
 }
 
+// A decimal hour count (e.g. 7.5) as "7h 30m" — "8h" when there are no
+// leftover minutes, "45m" when there's less than an hour.
+export function formatHoursMinutes(hours: number) {
+  const totalMinutes = Math.round(hours * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}
+
 export function localClock(iso: string, timeZone: string = getDisplayTimeZone()) {
   const formatter = cachedFormatter(
     clockFormatters,

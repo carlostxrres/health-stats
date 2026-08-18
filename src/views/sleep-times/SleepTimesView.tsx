@@ -4,7 +4,13 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { type ChartConfig, ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { apiClient } from "@/lib/api-client";
-import { formatDayLabel, formatDayTick, localClock, localDayKey } from "@/lib/localTime";
+import {
+  formatDayLabel,
+  formatDayTick,
+  formatHoursMinutes,
+  localClock,
+  localDayKey,
+} from "@/lib/localTime";
 
 type SleepSegment = {
   hours: number;
@@ -49,14 +55,14 @@ function SleepTooltipContent({
               {segment.isNap ? " · siesta" : ""}
             </span>
             <span className="font-mono tabular-nums text-foreground">
-              {segment.hours.toFixed(1)} h
+              {formatHoursMinutes(segment.hours)}
             </span>
           </div>
         ))}
       </div>
       <div className="flex items-center justify-between gap-3 border-t border-border/50 pt-1 font-medium">
         <span>Total</span>
-        <span className="font-mono tabular-nums">{total.toFixed(1)} h</span>
+        <span className="font-mono tabular-nums">{formatHoursMinutes(total)}</span>
       </div>
     </div>
   );
