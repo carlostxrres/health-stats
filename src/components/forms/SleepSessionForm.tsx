@@ -3,6 +3,15 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { Field } from "@/components/forms/Field";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -38,6 +47,7 @@ export function SleepSessionForm({
   const navigate = useNavigate();
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [overlapDialogOpen, setOverlapDialogOpen] = useState(false);
 
   const {
     register,
@@ -101,6 +111,10 @@ export function SleepSessionForm({
         notes: "",
       });
     } catch (err) {
+      if (err instanceof Error && err.message === "OVERLAP") {
+        setOverlapDialogOpen(true);
+        return;
+      }
       setStatus("error");
       setErrorMessage(err instanceof Error ? err.message : "Error al guardar.");
     }
@@ -150,6 +164,23 @@ export function SleepSessionForm({
       <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Guardando…" : entryId ? "Guardar cambios" : "Guardar"}
       </Button>
+
+      <AlertDialog open={overlapDialogOpen} onOpenChange={setOverlapDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Este periodo se solapa con otro existente</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ya tienes un registro de sueño que se solapa con este horario. Ajusta la hora de
+              acostarte o de levantarte para que no coincidan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setOverlapDialogOpen(false)}>
+              Entendido
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </form>
   );
 }

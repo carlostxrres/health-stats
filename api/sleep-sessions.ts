@@ -1,9 +1,19 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { and, desc, eq, gte, lt } from "drizzle-orm";
+import { and, desc, eq, gt, gte, lt, ne } from "drizzle-orm";
 import { sleepSessions } from "../db/schema/index.js";
 import { sleepSessionInputSchema } from "../shared/validation/index.js";
 import { db } from "./_lib/db.js";
 import { createHandler, parseLimit } from "./_lib/http.js";
+
+async function findOverlap(wentToBedAt: string, wokeUpAt: string, excludeId?: string) {
+  return db.query.sleepSessions.findFirst({
+    where: and(
+      lt(sleepSessions.wentToBedAt, wokeUpAt),
+      gt(sleepSessions.wokeUpAt, wentToBedAt),
+      excludeId ? ne(sleepSessions.id, excludeId) : undefined,
+    ),
+  });
+}
 
 async function list(req: VercelRequest, res: VercelResponse) {
   const from = typeof req.query.from === "string" ? req.query.from : undefined;
@@ -23,6 +33,12 @@ async function list(req: VercelRequest, res: VercelResponse) {
 
 async function create(req: VercelRequest, res: VercelResponse) {
   const input = sleepSessionInputSchema.parse(req.body);
+
+  if (await findOverlap(input.wentToBedAt, input.wokeUpAt)) {
+    res.status(409).json({ error: "OVERLAP" });
+    return;
+  }
+
   const [row] = await db.insert(sleepSessions).values(input).returning();
   res.status(201).json(row);
 }
@@ -35,6 +51,11 @@ async function update(req: VercelRequest, res: VercelResponse) {
   }
 
   const input = sleepSessionInputSchema.parse(req.body);
+
+  if (await findOverlap(input.wentToBedAt, input.wokeUpAt, id)) {
+    res.status(409).json({ error: "OVERLAP" });
+    return;
+  }
 
   const [row] = await db
     .update(sleepSessions)
