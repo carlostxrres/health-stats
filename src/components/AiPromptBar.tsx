@@ -1,13 +1,13 @@
 import type { EntryTypeCode } from "@shared/entryTypes";
 import { Image as ImageIcon, Loader2, Send, Sparkles } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, type KeyboardEvent, useState } from "react";
 import type { UploadedPhotoFile } from "@/components/forms/PhotoUploader";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
-  InputGroupInput,
   InputGroupText,
+  InputGroupTextarea,
 } from "@/components/ui/input-group";
 import { apiClient } from "@/lib/api-client";
 import { localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
@@ -28,6 +28,13 @@ export function AiPromptBar({
   const [error, setError] = useState<string | null>(null);
   const hasImages = images.length > 0;
   const canSubmit = text.trim().length > 0 || hasImages;
+
+  function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      e.currentTarget.form?.requestSubmit();
+    }
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -85,7 +92,7 @@ export function AiPromptBar({
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-20 border-t bg-background/95 p-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <div className="sticky bottom-0 z-10 border-t bg-background/95 p-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <form onSubmit={handleSubmit} className="mx-auto flex max-w-lg flex-col gap-1.5">
         <InputGroup>
           <InputGroupAddon>
@@ -99,14 +106,16 @@ export function AiPromptBar({
               </InputGroupText>
             </InputGroupAddon>
           )}
-          <InputGroupInput
+          <InputGroupTextarea
             placeholder={
               hasImages
                 ? "Añade contexto (opcional)…"
                 : 'Describe qué quieres registrar, ej. "peso 87,75kg"'
             }
+            rows={1}
             value={text}
             onChange={(e) => setText(e.target.value)}
+            onKeyDown={handleKeyDown}
             disabled={loading}
           />
           <InputGroupAddon align="inline-end">
