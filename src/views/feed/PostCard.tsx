@@ -27,11 +27,11 @@ export function PostCard({
           </AvatarFallback>
         </Avatar>
         <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-1.5 text-sm">
-            {displayName && <span className="font-medium text-foreground">{displayName}</span>}
-            <span className={displayName ? "text-foreground" : "font-medium text-foreground"}>
-              {displayName ? verb.toLowerCase() : verb}
-            </span>
+          <div className="flex flex-wrap items-center text-sm font-medium text-foreground">
+            {displayName && <span>{displayName}</span>}
+            &nbsp;
+            <span>{displayName ? verb.toLowerCase() : verb}</span>
+            &nbsp;
             <span className="text-muted-foreground">· {formatPostDate(occurredAt)}</span>
           </div>
           {children}

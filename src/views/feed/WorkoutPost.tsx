@@ -11,7 +11,7 @@ export function WorkoutPost({ workout }: { workout: WorkoutWithDetails }) {
     WORKOUT_TYPES.find((type) => type.code === workout.workoutType)?.label ?? workout.workoutType;
 
   return (
-    <PostCard icon={Dumbbell} verb="Carlos entrenó" occurredAt={workout.startedAt}>
+    <PostCard icon={Dumbbell} verb="entrenó" occurredAt={workout.startedAt}>
       <p className="font-medium text-foreground">
         {typeLabel}
         {workout.durationMinutes ? ` de ${workout.durationMinutes} minutos` : ""}
