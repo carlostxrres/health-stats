@@ -1,6 +1,18 @@
 import { Activity, Home, LineChart, List, LogIn, LogOut, Settings, SquarePlus } from "lucide-react";
 import type * as React from "react";
+import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   Sidebar,
   SidebarContent,
@@ -35,6 +47,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { session, loading } = useAuth();
   const { pathname } = useLocation();
   const { isMobile, setOpenMobile } = useSidebar();
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   function closeMobileNav() {
     if (isMobile) setOpenMobile(false);
@@ -89,10 +102,31 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             {!loading &&
               (session ? (
-                <SidebarMenuButton onClick={() => supabase.auth.signOut()}>
-                  <LogOut />
-                  <span>Cerrar sesión</span>
-                </SidebarMenuButton>
+                <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+                  <AlertDialogTrigger render={<SidebarMenuButton />}>
+                    <LogOut />
+                    <span>Cerrar sesión</span>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>¿Cerrar sesión?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Tendrás que volver a iniciar sesión para acceder a tus datos.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => {
+                          closeMobileNav();
+                          supabase.auth.signOut();
+                        }}
+                      >
+                        Cerrar sesión
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               ) : (
                 <SidebarMenuButton onClick={closeMobileNav} render={<NavLink to="/login" />}>
                   <LogIn />
