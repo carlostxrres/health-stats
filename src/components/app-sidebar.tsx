@@ -1,4 +1,4 @@
-import { Activity, Home, LineChart, List, LogIn, LogOut, SquarePlus } from "lucide-react";
+import { Activity, Home, LineChart, List, LogIn, LogOut, Settings, SquarePlus } from "lucide-react";
 import type * as React from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
@@ -23,7 +23,9 @@ const NAV_ITEMS = [
   { to: "/view", label: "Vistas", icon: LineChart, end: false },
 ] as const;
 
-function isNavItemActive(pathname: string, item: (typeof NAV_ITEMS)[number]) {
+const SETTINGS_ITEM = { to: "/settings", label: "Ajustes", icon: Settings, end: false } as const;
+
+function isNavItemActive(pathname: string, item: { to: string; end: boolean }) {
   if (item.end) return pathname === item.to;
   return pathname === item.to || pathname.startsWith(`${item.to}/`);
 }
@@ -67,6 +69,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              isActive={isNavItemActive(pathname, SETTINGS_ITEM)}
+              render={<NavLink to={SETTINGS_ITEM.to} />}
+            >
+              <SETTINGS_ITEM.icon />
+              <span>{SETTINGS_ITEM.label}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             {!loading &&
               (session ? (

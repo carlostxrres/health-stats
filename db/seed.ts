@@ -1,8 +1,10 @@
 import { METRIC_DEFINITIONS, WORKOUT_TYPES } from "../shared/metricCatalog.js";
 import { client, db } from "./client.js";
-import { metricDefinitions, sources, workoutTypes } from "./schema/index.js";
+import { appSettings, metricDefinitions, sources, workoutTypes } from "./schema/index.js";
 
 async function seed() {
+  await db.insert(appSettings).values({ id: "default" }).onConflictDoNothing();
+
   await db
     .insert(sources)
     .values([

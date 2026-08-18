@@ -1,18 +1,20 @@
-// This app is single-user (see README) and doesn't have a settings screen
-// yet, so the display timezone is this hardcoded default for now. Once a
-// settings screen exists, getDisplayTimeZone() is the one place to swap in
-// the stored user preference — every function below already takes an
-// optional `timeZone` override and falls back to it, so nothing else needs
-// to change.
-//
 // Timestamps round-trip through Postgres as whatever offset the DB
 // session's timezone happens to use (typically UTC) — not the original
 // entry's offset — so this must be an explicit conversion, not something
 // read off the viewing device's own clock.
-const DEFAULT_TIME_ZONE = "Europe/Madrid";
+//
+// This module-level value is the stored settings preference once loaded
+// (see useSettings.tsx, which calls setDisplayTimeZone() on fetch); every
+// function below already takes an optional `timeZone` override and falls
+// back to it, so nothing else needs to change.
+let displayTimeZone = "Europe/Madrid";
 
 export function getDisplayTimeZone(): string {
-  return DEFAULT_TIME_ZONE;
+  return displayTimeZone;
+}
+
+export function setDisplayTimeZone(timeZone: string): void {
+  displayTimeZone = timeZone;
 }
 
 // Intl.DateTimeFormat instances are bound to a fixed timeZone at
@@ -120,13 +122,16 @@ export function isWeekend(day: string) {
   return dayOfWeek === 0 || dayOfWeek === 6;
 }
 
-// Same reasoning as getDisplayTimeZone(): no settings screen yet, so this is
-// the one place a future one would plug in a stored week-start preference.
-// Matches Date#getDay()'s convention (0=Sun..6=Sat).
-const DEFAULT_WEEK_START_DAY = 1; // Monday
+// Same reasoning as displayTimeZone above. Matches Date#getDay()'s
+// convention (0=Sun..6=Sat).
+let weekStartDay = 1; // Monday
 
 export function getWeekStartDay(): number {
-  return DEFAULT_WEEK_START_DAY;
+  return weekStartDay;
+}
+
+export function setWeekStartDay(day: number): void {
+  weekStartDay = day;
 }
 
 // The 7 day-keys (in order) of the week containing `day`, starting on

@@ -1,6 +1,7 @@
 import type { ComponentType, ReactNode } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
+import { useSettings } from "@/hooks/useSettings";
 import { formatPostDate } from "@/lib/localTime";
 
 export function PostCard({
@@ -14,6 +15,9 @@ export function PostCard({
   occurredAt: string;
   children: ReactNode;
 }) {
+  const { settings } = useSettings();
+  const displayName = settings?.displayName;
+
   return (
     <Card>
       <CardContent className="flex gap-3">
@@ -24,7 +28,10 @@ export function PostCard({
         </Avatar>
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <div className="flex flex-wrap items-center gap-1.5 text-sm">
-            <span className="font-medium text-foreground">{verb}</span>
+            {displayName && <span className="font-medium text-foreground">{displayName}</span>}
+            <span className={displayName ? "text-foreground" : "font-medium text-foreground"}>
+              {displayName ? verb.toLowerCase() : verb}
+            </span>
             <span className="text-muted-foreground">· {formatPostDate(occurredAt)}</span>
           </div>
           {children}
