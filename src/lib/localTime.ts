@@ -98,15 +98,28 @@ export function formatDayLabel(day: string) {
   });
 }
 
+// "YYYY-MM-DD" `delta` calendar days from `day`. Parses/reformats using the
+// runtime's local zone; safe because both steps use the same implicit zone,
+// so the calendar date never shifts (same reasoning as formatDayTick).
+export function addDays(day: string, delta: number) {
+  const date = new Date(`${day}T00:00:00`);
+  date.setDate(date.getDate() + delta);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+export function isWeekend(day: string) {
+  const dayOfWeek = new Date(`${day}T00:00:00`).getDay();
+  return dayOfWeek === 0 || dayOfWeek === 6;
+}
+
 // Every calendar day from `startDay` to `endDay`, inclusive.
 export function enumerateDays(startDay: string, endDay: string) {
   const days: string[] = [];
-  const cursor = new Date(`${startDay}T00:00:00`);
-  const end = new Date(`${endDay}T00:00:00`);
-  while (cursor <= end) {
-    const pad = (n: number) => String(n).padStart(2, "0");
-    days.push(`${cursor.getFullYear()}-${pad(cursor.getMonth() + 1)}-${pad(cursor.getDate())}`);
-    cursor.setDate(cursor.getDate() + 1);
+  let cursor = startDay;
+  while (cursor <= endDay) {
+    days.push(cursor);
+    cursor = addDays(cursor, 1);
   }
   return days;
 }
