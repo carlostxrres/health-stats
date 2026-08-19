@@ -1,6 +1,7 @@
-import { AlarmClock, BedDouble, CalendarDays, Rss, Scale } from "lucide-react";
+import { AlarmClock, BedDouble, CalendarDays, Flame, Rss, Scale } from "lucide-react";
 import type { ComponentType } from "react";
 import { FeedView } from "@/views/feed/FeedView";
+import { PoopRegularityView } from "@/views/poop-regularity/PoopRegularityView";
 import { SleepPeriodsView } from "@/views/sleep-periods/SleepPeriodsView";
 import { SleepTimesView } from "@/views/sleep-times/SleepTimesView";
 import { WeekView } from "@/views/week/WeekView";
@@ -43,6 +44,12 @@ export const VIEWS: ViewDefinition[] = [
     name: "Week",
     icon: CalendarDays,
     component: WeekView,
+  },
+  {
+    slug: "poop-regularity",
+    name: "Regularity",
+    icon: Flame,
+    component: PoopRegularityView,
   },
 ];
 
