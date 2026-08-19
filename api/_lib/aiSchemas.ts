@@ -12,6 +12,8 @@ import {
 import {
   EPISODE_TYPE_LABELS,
   HEALTH_EPISODE_TYPES,
+  MEAL_TYPE_LABELS,
+  MEAL_TYPES,
   STOOL_COLOR_LABELS,
   STOOL_COLORS,
 } from "../../shared/validation/index.js";
@@ -32,6 +34,7 @@ const episodeTypeDescription = HEALTH_EPISODE_TYPES.map(
   (t) => `${t} (${EPISODE_TYPE_LABELS[t]})`,
 ).join(", ");
 const stoolColorDescription = STOOL_COLORS.map((c) => `${c} (${STOOL_COLOR_LABELS[c]})`).join(", ");
+const mealTypeDescription = MEAL_TYPES.map((t) => `${t} (${MEAL_TYPE_LABELS[t]})`).join(", ");
 
 const aiMetricSchema = z.object({
   metricType: z
@@ -58,6 +61,7 @@ const aiMetricSchema = z.object({
 });
 
 export const aiMealSchema = z.object({
+  mealType: z.enum(MEAL_TYPES).describe(`Tipo de comida. Valores: ${mealTypeDescription}.`),
   title: z.string().min(1).max(200),
   description: z.string().max(2000).optional(),
   eatenAt: z.iso
@@ -204,6 +208,7 @@ function config<Schema extends z.ZodTypeAny>(
 
 export function buildMealInitialData(input: z.infer<typeof aiMealSchema>, now: string) {
   return {
+    mealType: input.mealType,
     title: input.title,
     description: input.description ?? null,
     eatenAt: input.eatenAt ?? now,

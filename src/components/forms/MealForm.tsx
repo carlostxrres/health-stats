@@ -1,17 +1,30 @@
-import { mealInputSchema } from "@shared/validation";
+import { MEAL_TYPE_LABELS, MEAL_TYPES, mealInputSchema } from "@shared/validation";
 import { Plus, X } from "lucide-react";
 import { useState } from "react";
-import { useFieldArray, useForm } from "react-hook-form";
+import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { Field } from "@/components/forms/Field";
 import { PhotoUploader, type UploadedPhotoFile } from "@/components/forms/PhotoUploader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { apiClient } from "@/lib/api-client";
 import { isoToLocalInputValue, localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
 
+const MEAL_TYPE_ITEMS = MEAL_TYPES.map((type) => ({
+  value: type,
+  label: MEAL_TYPE_LABELS[type],
+}));
+
 export type MealInitialData = {
+  mealType: string;
   title: string;
   description: string | null;
   eatenAt: string;
@@ -21,6 +34,7 @@ export type MealInitialData = {
 };
 
 type FormValues = {
+  mealType: string;
   title: string;
   description: string;
   eatenAtLocal: string;
@@ -53,6 +67,7 @@ export function MealForm({
   } = useForm<FormValues>({
     defaultValues: initialData
       ? {
+          mealType: initialData.mealType,
           title: initialData.title,
           description: initialData.description ?? "",
           eatenAtLocal: isoToLocalInputValue(initialData.eatenAt),
@@ -64,6 +79,7 @@ export function MealForm({
           })),
         }
       : {
+          mealType: MEAL_TYPES[0],
           title: "",
           description: "",
           eatenAtLocal: nowAsLocalInputValue(),
@@ -79,6 +95,7 @@ export function MealForm({
     setErrorMessage(null);
 
     const parsed = mealInputSchema.safeParse({
+      mealType: values.mealType,
       title: values.title,
       description: values.description || undefined,
       eatenAt: localInputToIso(values.eatenAtLocal),
@@ -110,6 +127,7 @@ export function MealForm({
       setPhotoPaths([]);
       onPhotosChange?.([]);
       reset({
+        mealType: values.mealType,
         title: "",
         description: "",
         eatenAtLocal: nowAsLocalInputValue(),
@@ -124,6 +142,26 @@ export function MealForm({
 
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
+      <Field label="Tipo">
+        <Controller
+          control={control}
+          name="mealType"
+          render={({ field }) => (
+            <Select items={MEAL_TYPE_ITEMS} value={field.value} onValueChange={field.onChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MEAL_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {MEAL_TYPE_LABELS[type]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+      </Field>
       <Field label="Título">
         <Input {...register("title", { required: true })} placeholder="Ensalada de lentejas" />
       </Field>

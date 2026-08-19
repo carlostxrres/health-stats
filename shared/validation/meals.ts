@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+export const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
+
+export const MEAL_TYPE_LABELS: Record<(typeof MEAL_TYPES)[number], string> = {
+  breakfast: "Desayuno",
+  lunch: "Almuerzo",
+  dinner: "Cena",
+  snack: "Snack",
+};
+
 export const mealIngredientInputSchema = z.object({
   ingredient: z.string().min(1).max(200),
   quantityValue: z.number().optional(),
@@ -8,6 +17,7 @@ export const mealIngredientInputSchema = z.object({
 });
 
 export const mealInputSchema = z.object({
+  mealType: z.enum(MEAL_TYPES),
   title: z.string().min(1).max(200),
   description: z.string().max(2000).optional(),
   eatenAt: z.iso.datetime({ offset: true }),

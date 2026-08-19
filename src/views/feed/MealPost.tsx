@@ -4,9 +4,16 @@ import { IngredientBadges } from "./IngredientBadges";
 import { PostCard } from "./PostCard";
 import { PostPhotoCarousel } from "./PostPhotoCarousel";
 
+const MEAL_VERB_LABELS: Record<MealWithDetails["mealType"], string> = {
+  breakfast: "Desayunó",
+  lunch: "Almorzó",
+  dinner: "Cenó",
+  snack: "Tomó un snack",
+};
+
 export function MealPost({ meal }: { meal: MealWithDetails }) {
   return (
-    <PostCard icon={Utensils} verb="Comió" occurredAt={meal.eatenAt}>
+    <PostCard icon={Utensils} verb={MEAL_VERB_LABELS[meal.mealType]} occurredAt={meal.eatenAt}>
       <p className="font-medium text-foreground">{meal.title}</p>
       {meal.location && (
         <p className="flex items-center gap-1 text-sm text-muted-foreground">

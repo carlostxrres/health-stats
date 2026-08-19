@@ -1,0 +1,1 @@
+ALTER TABLE "meals" ALTER COLUMN "meal_type" SET NOT NULL;

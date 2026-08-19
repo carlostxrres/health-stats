@@ -1,5 +1,5 @@
 import { WORKOUT_TYPES } from "@shared/metricCatalog";
-import { BRISTOL_SCALE_LABELS } from "@shared/validation";
+import { BRISTOL_SCALE_LABELS, MEAL_TYPE_LABELS } from "@shared/validation";
 import { formatDayLabel } from "@/lib/localTime";
 import { PhotoThumbnail } from "./PhotoThumbnail";
 import type { WeekEventRow } from "./types";
@@ -22,10 +22,14 @@ function EventRow({ row }: { row: WeekEventRow }) {
 
   if (row.kind === "meal") {
     const meal = row.data;
+    const typeLabel =
+      MEAL_TYPE_LABELS[meal.mealType as keyof typeof MEAL_TYPE_LABELS] ?? meal.mealType;
     return (
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-0.5">
-          <span className="font-medium text-foreground">{meal.title}</span>
+          <span className="font-medium text-foreground">
+            {typeLabel}: {meal.title}
+          </span>
           {meal.location && <span className="text-muted-foreground">{meal.location}</span>}
           {meal.description && <span className="text-muted-foreground">{meal.description}</span>}
           {meal.photos.length > 0 && (

@@ -26,6 +26,7 @@ async function create(req: VercelRequest, res: VercelResponse) {
     const [meal] = await tx
       .insert(meals)
       .values({
+        mealType: input.mealType,
         title: input.title,
         description: input.description,
         eatenAt: input.eatenAt,
@@ -76,6 +77,7 @@ async function update(req: VercelRequest, res: VercelResponse) {
     const [meal] = await tx
       .update(meals)
       .set({
+        mealType: input.mealType,
         title: input.title,
         description: input.description ?? null,
         eatenAt: input.eatenAt,

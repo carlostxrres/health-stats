@@ -4,6 +4,7 @@ import { sources } from "./sources.js";
 
 export const meals = pgTable("meals", {
   id: uuid("id").primaryKey().defaultRandom(),
+  mealType: text("meal_type").notNull(), // 'breakfast' | 'lunch' | 'dinner' | 'snack'
   title: text("title").notNull(),
   description: text("description"),
   eatenAt: timestamp("eaten_at", { withTimezone: true, mode: "string" }).notNull(),
