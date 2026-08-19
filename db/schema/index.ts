@@ -3,6 +3,7 @@ export * from "./meals.js";
 export * from "./medications.js";
 export * from "./metrics.js";
 export * from "./periods.js";
+export * from "./poopEntries.js";
 export * from "./settings.js";
 export * from "./sources.js";
 export * from "./workouts.js";

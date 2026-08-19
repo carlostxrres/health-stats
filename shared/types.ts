@@ -7,6 +7,8 @@ import type {
   meals,
   medications,
   metricEntries,
+  poopEntries,
+  poopEntryPhotos,
   sleepSessions,
   workoutMetrics,
   workoutPhotos,
@@ -35,6 +37,10 @@ export type WorkoutWithDetails = Workout & {
 
 export type SleepSession = typeof sleepSessions.$inferSelect;
 export type HealthEpisode = typeof healthEpisodes.$inferSelect;
+
+export type PoopEntry = typeof poopEntries.$inferSelect;
+export type PoopEntryPhoto = typeof poopEntryPhotos.$inferSelect;
+export type PoopEntryWithPhotos = PoopEntry & { photos: PoopEntryPhoto[] };
 
 export type BodyPhoto = typeof bodyPhotos.$inferSelect;
 export type BodyPhotoFile = typeof bodyPhotoFiles.$inferSelect;

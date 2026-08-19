@@ -11,6 +11,7 @@ import { MealForm, type MealInitialData } from "@/components/forms/MealForm";
 import { MedicationForm, type MedicationInitialData } from "@/components/forms/MedicationForm";
 import { MetricEntryForm, type MetricEntryInitialData } from "@/components/forms/MetricEntryForm";
 import type { UploadedPhotoFile } from "@/components/forms/PhotoUploader";
+import { PoopEntryForm, type PoopEntryInitialData } from "@/components/forms/PoopEntryForm";
 import {
   SleepSessionForm,
   type SleepSessionInitialData,
@@ -68,6 +69,8 @@ function renderForm(
       return (
         <SleepSessionForm entryId={entryId} initialData={initialData as SleepSessionInitialData} />
       );
+    case "poop":
+      return <PoopEntryForm entryId={entryId} initialData={initialData as PoopEntryInitialData} />;
     case "health_episode":
       return (
         <HealthEpisodeForm

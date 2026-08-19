@@ -24,6 +24,12 @@ export const ENTRY_TYPES = [
   },
   { code: "sleep", label: "Sueño", shortLabel: "Sueño", apiPath: "/sleep-sessions" },
   {
+    code: "poop",
+    label: "Deposición",
+    shortLabel: "Deposición",
+    apiPath: "/poop-entries",
+  },
+  {
     code: "health_episode",
     label: "Lesión / enfermedad",
     shortLabel: "Lesión/enfermedad",

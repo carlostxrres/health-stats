@@ -15,6 +15,13 @@
       "when": 1787059521697,
       "tag": "0001_smart_quasar",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787162060854,
+      "tag": "0002_green_exodus",
+      "breakpoints": true
     }
   ]
 }

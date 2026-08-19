@@ -6,6 +6,7 @@ import {
   meals,
   medications,
   metricEntries,
+  poopEntries,
   sleepSessions,
   workouts,
 } from "../db/schema/index.js";
@@ -47,6 +48,11 @@ const LOOKUPS: { type: EntryTypeCode; query: (id: string) => Promise<unknown | u
   {
     type: "sleep",
     query: (id) => db.query.sleepSessions.findFirst({ where: eq(sleepSessions.id, id) }),
+  },
+  {
+    type: "poop",
+    query: (id) =>
+      db.query.poopEntries.findFirst({ where: eq(poopEntries.id, id), with: { photos: true } }),
   },
   {
     type: "health_episode",
@@ -191,6 +197,32 @@ async function fetchSleepSessions(from?: string, to?: string): Promise<Normalize
   });
 }
 
+async function fetchPoopEntries(from?: string, to?: string): Promise<NormalizedEntry[]> {
+  const { gteValue, lteValue } = dateRangeBounds(from, to);
+  const rows = await db
+    .select({
+      id: poopEntries.id,
+      occurredAt: poopEntries.occurredAt,
+      bristolScale: poopEntries.bristolScale,
+      source: poopEntries.source,
+    })
+    .from(poopEntries)
+    .where(
+      and(
+        gteValue ? gte(poopEntries.occurredAt, gteValue) : undefined,
+        lteValue ? lte(poopEntries.occurredAt, lteValue) : undefined,
+      ),
+    );
+
+  return rows.map((row) => ({
+    id: row.id,
+    type: "poop",
+    occurredAt: row.occurredAt,
+    title: row.bristolScale != null ? `Deposición · Bristol ${row.bristolScale}` : "Deposición",
+    source: row.source,
+  }));
+}
+
 async function fetchHealthEpisodes(from?: string, to?: string): Promise<NormalizedEntry[]> {
   const { gteValue, lteValue } = dateRangeBounds(from, to);
   const rows = await db
@@ -255,6 +287,7 @@ const FETCHERS: Record<EntryTypeCode, (from?: string, to?: string) => Promise<No
     medication: fetchMedications,
     workout: fetchWorkouts,
     sleep: fetchSleepSessions,
+    poop: fetchPoopEntries,
     health_episode: fetchHealthEpisodes,
     body_photo: fetchBodyPhotos,
   };

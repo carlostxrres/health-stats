@@ -9,7 +9,12 @@ import {
   WORKOUT_TYPE_CODES,
   WORKOUT_TYPES,
 } from "../../shared/metricCatalog.js";
-import { EPISODE_TYPE_LABELS, HEALTH_EPISODE_TYPES } from "../../shared/validation/index.js";
+import {
+  EPISODE_TYPE_LABELS,
+  HEALTH_EPISODE_TYPES,
+  STOOL_COLOR_LABELS,
+  STOOL_COLORS,
+} from "../../shared/validation/index.js";
 
 // Zod schemas that describe what the AI is allowed to extract from free text,
 // per entry type. These are intentionally separate from shared/validation's
@@ -26,6 +31,7 @@ const workoutTypeDescription = WORKOUT_TYPES.map((w) => `${w.code} (${w.label})`
 const episodeTypeDescription = HEALTH_EPISODE_TYPES.map(
   (t) => `${t} (${EPISODE_TYPE_LABELS[t]})`,
 ).join(", ");
+const stoolColorDescription = STOOL_COLORS.map((c) => `${c} (${STOOL_COLOR_LABELS[c]})`).join(", ");
 
 const aiMetricSchema = z.object({
   metricType: z
@@ -126,6 +132,39 @@ const aiSleepSchema = z.object({
   isNap: z.boolean().default(false).describe("true si es una siesta, no el sueño de la noche."),
   qualityRating: z.number().int().min(1).max(5).optional(),
   wakeFeeling: z.number().int().min(1).max(5).optional(),
+  notes: z.string().max(2000).optional(),
+});
+
+const aiPoopSchema = z.object({
+  occurredAt: z.iso
+    .datetime({ offset: true })
+    .optional()
+    .describe("Fecha y hora ISO-8601 con offset. Omite si el texto no la menciona."),
+  location: z.string().max(200).optional(),
+  bristolScale: z
+    .number()
+    .int()
+    .min(1)
+    .max(7)
+    .optional()
+    .describe("Escala de Bristol (consistencia), 1-7."),
+  urgency: z
+    .number()
+    .int()
+    .min(1)
+    .max(5)
+    .optional()
+    .describe("Nivel de urgencia, 1 (planificado) a 5 (muy urgente/repentino)."),
+  effort: z
+    .number()
+    .int()
+    .min(1)
+    .max(5)
+    .optional()
+    .describe("Nivel de esfuerzo/pujo, 1 (ninguno) a 5 (mucho)."),
+  feltComplete: z.boolean().optional().describe("true si sintió vaciado completo."),
+  color: z.enum(STOOL_COLORS).optional().describe(`Color. Valores: ${stoolColorDescription}.`),
+  durationMinutes: z.number().int().min(0).optional(),
   notes: z.string().max(2000).optional(),
 });
 
@@ -237,6 +276,22 @@ export const AI_ENTRY_CONFIGS: AiEntryConfig<z.ZodTypeAny>[] = [
       qualityRating: input.qualityRating ?? null,
       wakeFeeling: input.wakeFeeling ?? null,
       notes: input.notes ?? null,
+    }),
+  }),
+  config({
+    code: "poop",
+    schema: aiPoopSchema,
+    buildInitialData: (input, now) => ({
+      occurredAt: input.occurredAt ?? now,
+      location: input.location ?? null,
+      bristolScale: input.bristolScale ?? null,
+      urgency: input.urgency ?? null,
+      effort: input.effort ?? null,
+      feltComplete: input.feltComplete ?? null,
+      color: input.color ?? null,
+      durationMinutes: input.durationMinutes ?? null,
+      notes: input.notes ?? null,
+      photoStoragePaths: [],
     }),
   }),
   config({
