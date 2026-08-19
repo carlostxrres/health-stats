@@ -1,4 +1,5 @@
 import { WORKOUT_TYPES } from "@shared/metricCatalog";
+import { BRISTOL_SCALE_LABELS } from "@shared/validation";
 import { formatDayLabel } from "@/lib/localTime";
 import { PhotoThumbnail } from "./PhotoThumbnail";
 import type { WeekEventRow } from "./types";
@@ -30,6 +31,31 @@ function EventRow({ row }: { row: WeekEventRow }) {
           {meal.photos.length > 0 && (
             <div className="mt-1 flex gap-1">
               {meal.photos.map((photo) => (
+                <PhotoThumbnail key={photo.id} storagePath={photo.storagePath} />
+              ))}
+            </div>
+          )}
+        </div>
+        {timeRange}
+      </div>
+    );
+  }
+
+  if (row.kind === "poop") {
+    const entry = row.data;
+    const headline =
+      entry.bristolScale != null
+        ? BRISTOL_SCALE_LABELS[entry.bristolScale as keyof typeof BRISTOL_SCALE_LABELS]
+        : "Deposición";
+    return (
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <span className="font-medium text-foreground">{headline}</span>
+          {entry.location && <span className="text-muted-foreground">{entry.location}</span>}
+          {entry.notes && <span className="text-muted-foreground">{entry.notes}</span>}
+          {entry.photos.length > 0 && (
+            <div className="mt-1 flex gap-1">
+              {entry.photos.map((photo) => (
                 <PhotoThumbnail key={photo.id} storagePath={photo.storagePath} />
               ))}
             </div>

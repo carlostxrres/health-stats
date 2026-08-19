@@ -18,6 +18,7 @@ const chartConfig = {
   sleep: { label: "Sueño", color: "var(--chart-3)" },
   meal: { label: "Comidas", color: "var(--chart-highlight)" },
   workout: { label: "Deporte", color: "var(--chart-highlight-2)" },
+  poop: { label: "Deposiciones", color: "var(--chart-highlight-3)" },
 } satisfies ChartConfig;
 
 export function WeekView() {
@@ -78,7 +79,7 @@ export function WeekView() {
         <div>
           <h1 className="font-heading text-lg font-medium">Week</h1>
           <p className="text-sm text-muted-foreground">
-            Sueño, comidas y deporte de la semana, de un vistazo.
+            Sueño, comidas, deporte y deposiciones de la semana, de un vistazo.
           </p>
         </div>
         <WeekSelector weekDays={weekDays} onWeekChange={setWeekStartDay} />

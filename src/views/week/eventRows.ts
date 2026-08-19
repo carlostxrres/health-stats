@@ -1,4 +1,9 @@
-import type { MealWithDetails, SleepSession, WorkoutWithDetails } from "@shared/types";
+import type {
+  MealWithDetails,
+  PoopEntryWithPhotos,
+  SleepSession,
+  WorkoutWithDetails,
+} from "@shared/types";
 import { apiClient } from "@/lib/api-client";
 import { formatBoundaryOffset, splitByBoundaryDay } from "@/lib/dayBoundary";
 import { addDays } from "@/lib/localTime";
@@ -10,6 +15,10 @@ const MEAL_DURATION_MINUTES = 30; // meals have no end time, so they're always s
 // convention above; not an explicit spec requirement, just a reasonable
 // default so an undurationed workout still shows as a visible bar.
 const DEFAULT_WORKOUT_DURATION_MINUTES = 30;
+
+// Same idea for poop entries without a recorded duration — shorter than the
+// meal/workout default since these are typically quick events.
+const DEFAULT_POOP_DURATION_MINUTES = 10;
 
 function addMinutesIso(iso: string, minutes: number) {
   return new Date(new Date(iso).getTime() + minutes * 60 * 1000).toISOString();
@@ -30,10 +39,11 @@ export async function fetchWeekEvents(weekDays: string[]): Promise<WeekEventRow[
   const to = `${addDays(weekDays[weekDays.length - 1], 2)}T00:00:00.000Z`;
   const query = `from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
 
-  const [sessions, meals, workouts] = await Promise.all([
+  const [sessions, meals, workouts, poopEntries] = await Promise.all([
     apiClient.get<SleepSession[]>(`/sleep-sessions?${query}`),
     apiClient.get<MealWithDetails[]>(`/meals?${query}`),
     apiClient.get<WorkoutWithDetails[]>(`/workouts?${query}`),
+    apiClient.get<PoopEntryWithPhotos[]>(`/poop-entries?${query}`),
   ]);
 
   const rows: WeekEventRow[] = [];
@@ -89,6 +99,25 @@ export async function fetchWeekEvents(weekDays: string[]): Promise<WeekEventRow[
         endLabel: formatBoundaryOffset(segment.range[1], BOUNDARY_HOUR),
         kind: "workout",
         data: workout,
+      });
+    });
+  }
+
+  for (const entry of poopEntries) {
+    const durationMinutes = entry.durationMinutes ?? DEFAULT_POOP_DURATION_MINUTES;
+    const segments = splitByBoundaryDay(
+      { start: entry.occurredAt, end: addMinutesIso(entry.occurredAt, durationMinutes) },
+      BOUNDARY_HOUR,
+    );
+    segments.forEach((segment, index) => {
+      rows.push({
+        id: `poop:${entry.id}:${index}`,
+        day: segment.day,
+        range: segment.range,
+        startLabel: formatBoundaryOffset(segment.range[0], BOUNDARY_HOUR),
+        endLabel: formatBoundaryOffset(segment.range[1], BOUNDARY_HOUR),
+        kind: "poop",
+        data: entry,
       });
     });
   }

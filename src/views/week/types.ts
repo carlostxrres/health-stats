@@ -1,4 +1,9 @@
-import type { MealWithDetails, SleepSession, WorkoutWithDetails } from "@shared/types";
+import type {
+  MealWithDetails,
+  PoopEntryWithPhotos,
+  SleepSession,
+  WorkoutWithDetails,
+} from "@shared/types";
 
 export type WeekEventRow =
   | {
@@ -27,4 +32,13 @@ export type WeekEventRow =
       endLabel: string;
       kind: "workout";
       data: WorkoutWithDetails;
+    }
+  | {
+      id: string;
+      day: string;
+      range: [number, number];
+      startLabel: string;
+      endLabel: string;
+      kind: "poop";
+      data: PoopEntryWithPhotos;
     };

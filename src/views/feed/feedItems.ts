@@ -1,4 +1,9 @@
-import type { MealWithDetails, SleepSession, WorkoutWithDetails } from "@shared/types";
+import type {
+  MealWithDetails,
+  PoopEntryWithPhotos,
+  SleepSession,
+  WorkoutWithDetails,
+} from "@shared/types";
 import { apiClient } from "@/lib/api-client";
 import type { FeedItem } from "./types";
 
@@ -70,6 +75,11 @@ export function createFeedLoader(pageSize: number = FEED_PAGE_SIZE) {
       (to, limit) => apiClient.get<WorkoutWithDetails[]>(`/workouts?${buildQuery(to, limit)}`),
       (row) => row.startedAt,
       (row) => ({ id: `workout:${row.id}`, kind: "workout", occurredAt: row.startedAt, data: row }),
+    ),
+    createSource<PoopEntryWithPhotos>(
+      (to, limit) => apiClient.get<PoopEntryWithPhotos[]>(`/poop-entries?${buildQuery(to, limit)}`),
+      (row) => row.occurredAt,
+      (row) => ({ id: `poop:${row.id}`, kind: "poop", occurredAt: row.occurredAt, data: row }),
     ),
   ];
 
