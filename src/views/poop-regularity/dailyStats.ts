@@ -18,8 +18,8 @@ export async function fetchDailyStats(
 ): Promise<Map<string, DayStat>> {
   const from = `${startDay}T00:00:00.000Z`;
   const to = `${addDays(endDay, 1)}T00:00:00.000Z`;
-  const query = `from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
-  const rows = await apiClient.get<SummaryRow[]>(`/poop-entries-summary?${query}`);
+  const query = `summary=1&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+  const rows = await apiClient.get<SummaryRow[]>(`/poop-entries?${query}`);
 
   const byDay = new Map<string, { count: number; bristolSum: number; bristolCount: number }>();
   for (const row of rows) {
