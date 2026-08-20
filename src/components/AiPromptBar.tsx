@@ -58,7 +58,7 @@ export function AiPromptBar({
           extractEarliestEatenAt(files),
         ]);
         const res = await apiClient.post<{ type: "meal"; data: Record<string, unknown> }>(
-          "/ai/parse-meal-photo",
+          "/ai/parse?kind=meal-photo",
           { text: trimmed || undefined, now, images: compressed },
         );
         type = res.type;
@@ -68,10 +68,10 @@ export function AiPromptBar({
           photos: images.map((img) => ({ storagePath: img.storagePath })),
         };
       } else {
-        const res = await apiClient.post<{ type: EntryTypeCode; data: unknown }>(
-          "/ai/parse-entry",
-          { text: trimmed, now },
-        );
+        const res = await apiClient.post<{ type: EntryTypeCode; data: unknown }>("/ai/parse", {
+          text: trimmed,
+          now,
+        });
         type = res.type;
         data = res.data;
       }
