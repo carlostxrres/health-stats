@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ENTRY_TYPE_CODES } from "../entryTypes.js";
 
 const TIME_HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -15,6 +16,7 @@ export const settingsUpdateSchema = z
     wakeTimeGoal: z.string().regex(TIME_HHMM).nullable().optional(),
     weightGoalMinKg: z.number().positive().max(500).nullable().optional(),
     weightGoalMaxKg: z.number().positive().max(500).nullable().optional(),
+    privateEntryTypes: z.array(z.enum(ENTRY_TYPE_CODES)).optional(),
   })
   .refine(
     (data) =>

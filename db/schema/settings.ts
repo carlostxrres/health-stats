@@ -1,4 +1,4 @@
-import { date, integer, numeric, pgTable, text, time, timestamp } from "drizzle-orm/pg-core";
+import { date, integer, jsonb, numeric, pgTable, text, time, timestamp } from "drizzle-orm/pg-core";
 
 // Single-user app: this table only ever has one row, keyed by the fixed id
 // "default" (same singleton idiom as picking a fixed PK value rather than
@@ -19,5 +19,9 @@ export const appSettings = pgTable("app_settings", {
   wakeTimeGoal: time("wake_time_goal"),
   weightGoalMinKg: numeric("weight_goal_min_kg", { precision: 5, scale: 1 }),
   weightGoalMaxKg: numeric("weight_goal_max_kg", { precision: 5, scale: 1 }),
+  // Entry types hidden from unauthenticated requests (read access is public
+  // by default, see api/_lib/http.ts's createHandler). Whole-type granularity
+  // only, matching the app's existing EntryTypeCode concept — not per-entry.
+  privateEntryTypes: jsonb("private_entry_types").$type<string[]>().notNull().default([]),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }).defaultNow().notNull(),
 });

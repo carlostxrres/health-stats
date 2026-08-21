@@ -4,6 +4,7 @@ import { sleepSessions } from "../db/schema/index.js";
 import { sleepSessionInputSchema } from "../shared/validation/index.js";
 import { db } from "./_lib/db.js";
 import { createHandler, parseLimit } from "./_lib/http.js";
+import { isTypeHiddenFrom } from "./_lib/privacy.js";
 
 async function findOverlap(wentToBedAt: string, wokeUpAt: string, excludeId?: string) {
   return db.query.sleepSessions.findFirst({
@@ -16,6 +17,11 @@ async function findOverlap(wentToBedAt: string, wokeUpAt: string, excludeId?: st
 }
 
 async function list(req: VercelRequest, res: VercelResponse) {
+  if (await isTypeHiddenFrom(req, "sleep")) {
+    res.status(200).json([]);
+    return;
+  }
+
   const from = typeof req.query.from === "string" ? req.query.from : undefined;
   const to = typeof req.query.to === "string" ? req.query.to : undefined;
   const limit = parseLimit(req.query.limit);

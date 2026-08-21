@@ -1,0 +1,1 @@
+ALTER TABLE "app_settings" ADD COLUMN "private_entry_types" jsonb DEFAULT '[]'::jsonb NOT NULL;

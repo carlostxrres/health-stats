@@ -5,8 +5,14 @@ import { METRIC_DEFINITIONS } from "../shared/metricCatalog.js";
 import { metricEntryInputSchema } from "../shared/validation/index.js";
 import { db } from "./_lib/db.js";
 import { createHandler } from "./_lib/http.js";
+import { isTypeHiddenFrom } from "./_lib/privacy.js";
 
 async function list(req: VercelRequest, res: VercelResponse) {
+  if (await isTypeHiddenFrom(req, "metric")) {
+    res.status(200).json([]);
+    return;
+  }
+
   const metricType = typeof req.query.metricType === "string" ? req.query.metricType : undefined;
 
   const rows = await db.query.metricEntries.findMany({

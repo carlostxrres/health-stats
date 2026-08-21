@@ -8,14 +8,6 @@ Que haya varios botones: uno sobre comida, uno general, etc.
 
 También puede haber un botón que añada texto libre para hacer preguntas específicas (o incluso un pequeño chatbot).
 
-## Permitir logs privados
-
-No visibles si no se inicia sesión.
-
-Se puede hacer para tipos enteros, desde ajustes.
-
-O para logs específicos, desde /log. Bueno, esto lo tenemos que considerar.
-
 
 # Thinking
 
@@ -495,3 +487,13 @@ Installed shadcn's `dropdown-menu`. Rows no longer navigate on click; each has a
 
 - **Editar** — same navigation as the old row-click.
 - **Copiar a nuevo** — fetches the entry via the existing `GET /entries/:id`, then `src/lib/copyEntry.ts` blanks exactly date/time and photos (per type: `eatenAt`+photos for meals, `startedAt`+photos for workouts, both `wentToBedAt`/`wokeUpAt` for sleep, `recoveredAt` too for health episodes, etc.) and keeps everything else. The result is passed to `/log` via router navigation state rather than query params — works for all 8 entry types, not just meals, without reopening the generic-query-params question deferred earlier.
+
+## Permitir logs privados
+
+Implemented the "tipos enteros, desde ajustes" half of the two options the doc raised — **not** per-entry privacy (still open, see below).
+
+New Settings → Privacidad card lets you check which of the 8 entry types are hidden from anyone without a session. Enforcement lives server-side in `api/_lib/privacy.ts` (`isTypeHiddenFrom` / `filterVisibleTypes`), checked at the top of every per-type list endpoint (returns `[]` when hidden) and in the `/entries` aggregator's both list and single-lookup paths (a private entry's `/entries/:id` 404s rather than revealing it exists). Read access was already unauthenticated by design (`createHandler` only requires a session for non-GET), so this is additive — nothing needs auth that didn't before.
+
+Verified live against `vercel dev`: marked `poop` private via a direct DB write, confirmed `/api/poop-entries` returns `[]`, `/api/entries` excludes it from aggregated results and by-id lookups 404, while unrelated types (`meals`) were unaffected — then reset it back.
+
+**Not done**: per-entry privacy ("O para logs específicos, desde /log"). Scoped out for now since it needs its own schema decision (a column per table vs. a shared side table) — the doc itself flagged this as unresolved ("esto lo tenemos que considerar"), and type-level privacy already solves the stated problem for anything sensitive enough to warrant hiding a whole category (e.g. "shit" entries). Worth a follow-up if you want finer-grained control later.

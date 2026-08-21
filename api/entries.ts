@@ -19,6 +19,7 @@ import {
 import { EPISODE_TYPE_LABELS, entriesQuerySchema } from "../shared/validation/index.js";
 import { db } from "./_lib/db.js";
 import { createHandler } from "./_lib/http.js";
+import { filterVisibleTypes, isTypeHiddenFrom } from "./_lib/privacy.js";
 
 const LOOKUPS: { type: EntryTypeCode; query: (id: string) => Promise<unknown | undefined> }[] = [
   {
@@ -305,7 +306,8 @@ async function list(req: VercelRequest, res: VercelResponse) {
     offset: typeof req.query.offset === "string" ? req.query.offset : undefined,
   });
 
-  const typesToFetch = query.type && query.type.length > 0 ? query.type : ENTRY_TYPE_CODES;
+  const requestedTypes = query.type && query.type.length > 0 ? query.type : ENTRY_TYPE_CODES;
+  const typesToFetch = await filterVisibleTypes(req, requestedTypes);
 
   // The Supabase pooler runs in transaction mode (Supavisor, port 6543), which
   // does not support multiple concurrent queries multiplexed over the same
@@ -327,10 +329,11 @@ async function list(req: VercelRequest, res: VercelResponse) {
   res.status(200).json({ items, total: all.length });
 }
 
-async function getById(res: VercelResponse, id: string) {
+async function getById(req: VercelRequest, res: VercelResponse, id: string) {
   for (const lookup of LOOKUPS) {
     const data = await lookup.query(id);
     if (data) {
+      if (await isTypeHiddenFrom(req, lookup.type)) break;
       res.status(200).json({ type: lookup.type, data });
       return;
     }
@@ -342,7 +345,7 @@ async function getById(res: VercelResponse, id: string) {
 async function get(req: VercelRequest, res: VercelResponse) {
   const id = typeof req.query.id === "string" ? req.query.id : undefined;
   if (id) {
-    await getById(res, id);
+    await getById(req, res, id);
     return;
   }
   await list(req, res);

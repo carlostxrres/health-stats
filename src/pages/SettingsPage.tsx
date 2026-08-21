@@ -1,3 +1,4 @@
+import { ENTRY_TYPES, type EntryTypeCode } from "@shared/entryTypes";
 import { settingsUpdateSchema } from "@shared/validation";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -6,6 +7,7 @@ import { DatePickerField } from "@/components/forms/DatePickerField";
 import { Field } from "@/components/forms/Field";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
@@ -35,6 +37,7 @@ type FormValues = {
   wakeTimeGoal: string;
   weightGoalMinKg: string;
   weightGoalMaxKg: string;
+  privateEntryTypes: EntryTypeCode[];
 };
 
 const EMPTY_DEFAULTS: FormValues = {
@@ -50,6 +53,7 @@ const EMPTY_DEFAULTS: FormValues = {
   wakeTimeGoal: "",
   weightGoalMinKg: "",
   weightGoalMaxKg: "",
+  privateEntryTypes: [],
 };
 
 function buildDefaults(settings: AppSettings): FormValues {
@@ -67,6 +71,7 @@ function buildDefaults(settings: AppSettings): FormValues {
     wakeTimeGoal: settings.wakeTimeGoal?.slice(0, 5) ?? "",
     weightGoalMinKg: settings.weightGoalMinKg ?? "",
     weightGoalMaxKg: settings.weightGoalMaxKg ?? "",
+    privateEntryTypes: settings.privateEntryTypes as EntryTypeCode[],
   };
 }
 
@@ -105,6 +110,7 @@ export function SettingsPage() {
       wakeTimeGoal: values.wakeTimeGoal || null,
       weightGoalMinKg: values.weightGoalMinKg ? Number(values.weightGoalMinKg) : null,
       weightGoalMaxKg: values.weightGoalMaxKg ? Number(values.weightGoalMaxKg) : null,
+      privateEntryTypes: values.privateEntryTypes,
     });
 
     if (!parsed.success) {
@@ -263,9 +269,7 @@ export function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Objetivos</CardTitle>
-          <CardDescription>
-            Metas personales.
-          </CardDescription>
+          <CardDescription>Metas personales.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <Field label="Horas de sueño objetivo">
@@ -312,6 +316,43 @@ export function SettingsPage() {
               </Field>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Privacidad</CardTitle>
+          <CardDescription>Tipos de entrada ocultos si no has iniciado sesión.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <Controller
+            control={control}
+            name="privateEntryTypes"
+            render={({ field }) => (
+              <div className="flex flex-col gap-3">
+                {ENTRY_TYPES.map((type) => (
+                  <label
+                    key={type.code}
+                    htmlFor={`private-${type.code}`}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    <Checkbox
+                      id={`private-${type.code}`}
+                      checked={field.value.includes(type.code)}
+                      onCheckedChange={(checked) =>
+                        field.onChange(
+                          checked
+                            ? [...field.value, type.code]
+                            : field.value.filter((code) => code !== type.code),
+                        )
+                      }
+                    />
+                    {type.shortLabel}
+                  </label>
+                ))}
+              </div>
+            )}
+          />
         </CardContent>
       </Card>
 

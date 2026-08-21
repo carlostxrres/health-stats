@@ -4,6 +4,7 @@ import { poopEntries, poopEntryPhotos } from "../db/schema/index.js";
 import { poopEntryInputSchema } from "../shared/validation/index.js";
 import { db } from "./_lib/db.js";
 import { createHandler, parseLimit } from "./_lib/http.js";
+import { isTypeHiddenFrom } from "./_lib/privacy.js";
 
 // Cap for `?summary=1` requests (see listSummary below) — well above
 // parseLimit's normal 100-row cap since the caller needs a full year of
@@ -11,6 +12,11 @@ import { createHandler, parseLimit } from "./_lib/http.js";
 const MAX_SUMMARY_LIMIT = 5000;
 
 async function list(req: VercelRequest, res: VercelResponse) {
+  if (await isTypeHiddenFrom(req, "poop")) {
+    res.status(200).json([]);
+    return;
+  }
+
   const from = typeof req.query.from === "string" ? req.query.from : undefined;
   const to = typeof req.query.to === "string" ? req.query.to : undefined;
 

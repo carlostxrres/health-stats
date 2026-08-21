@@ -16,6 +16,7 @@ export type AppSettings = {
   wakeTimeGoal: string | null;
   weightGoalMinKg: string | null;
   weightGoalMaxKg: string | null;
+  privateEntryTypes: string[];
   updatedAt: string;
 };
 

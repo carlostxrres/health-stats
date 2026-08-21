@@ -4,8 +4,14 @@ import { healthEpisodes } from "../db/schema/index.js";
 import { healthEpisodeInputSchema } from "../shared/validation/index.js";
 import { db } from "./_lib/db.js";
 import { createHandler } from "./_lib/http.js";
+import { isTypeHiddenFrom } from "./_lib/privacy.js";
 
-async function list(_req: VercelRequest, res: VercelResponse) {
+async function list(req: VercelRequest, res: VercelResponse) {
+  if (await isTypeHiddenFrom(req, "health_episode")) {
+    res.status(200).json([]);
+    return;
+  }
+
   const rows = await db.query.healthEpisodes.findMany({
     orderBy: desc(healthEpisodes.startedAt),
     limit: 50,
