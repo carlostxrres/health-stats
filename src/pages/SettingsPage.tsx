@@ -5,6 +5,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { DatePickerField } from "@/components/forms/DatePickerField";
 import { Field } from "@/components/forms/Field";
+import { NutritionGoalsCard } from "@/components/settings/NutritionGoalsCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -318,6 +319,8 @@ export function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <NutritionGoalsCard />
 
       <Card>
         <CardHeader>

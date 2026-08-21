@@ -117,6 +117,7 @@ async function update(req: VercelRequest, res: VercelResponse) {
         description: input.description ?? null,
         eatenAt: input.eatenAt,
         location: input.location ?? null,
+        updatedAt: new Date().toISOString(),
       })
       .where(eq(meals.id, id))
       .returning();

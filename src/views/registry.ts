@@ -1,7 +1,17 @@
-import { AlarmClock, BedDouble, CalendarDays, Flame, Rss, Scale, Sparkles } from "lucide-react";
+import {
+  AlarmClock,
+  BedDouble,
+  CalendarDays,
+  Flame,
+  Rss,
+  Scale,
+  Sparkles,
+  Target,
+} from "lucide-react";
 import type { ComponentType } from "react";
 import { FeedView } from "@/views/feed/FeedView";
 import { InsightsView } from "@/views/insights/InsightsView";
+import { NutritionComplianceView } from "@/views/nutrition-compliance/NutritionComplianceView";
 import { PoopRegularityView } from "@/views/poop-regularity/PoopRegularityView";
 import { SleepPeriodsView } from "@/views/sleep-periods/SleepPeriodsView";
 import { SleepTimesView } from "@/views/sleep-times/SleepTimesView";
@@ -57,6 +67,12 @@ export const VIEWS: ViewDefinition[] = [
     name: "Insights IA",
     icon: Sparkles,
     component: InsightsView,
+  },
+  {
+    slug: "cumplimiento",
+    name: "Cumplimiento",
+    icon: Target,
+    component: NutritionComplianceView,
   },
 ];
 

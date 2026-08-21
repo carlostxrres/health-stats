@@ -6,6 +6,8 @@ import {
   meals,
   medications,
   metricEntries,
+  nutritionGoalEvaluations,
+  nutritionGoals,
   poopEntries,
   sleepSessions,
   workouts,
@@ -16,7 +18,11 @@ import {
   METRIC_DEFINITIONS,
   WORKOUT_TYPES,
 } from "../shared/metricCatalog.js";
-import { EPISODE_TYPE_LABELS, entriesQuerySchema } from "../shared/validation/index.js";
+import {
+  EPISODE_TYPE_LABELS,
+  entriesQuerySchema,
+  nutritionComplianceQuerySchema,
+} from "../shared/validation/index.js";
 import { db } from "./_lib/db.js";
 import { createHandler } from "./_lib/http.js";
 import { filterVisibleTypes, isTypeHiddenFrom } from "./_lib/privacy.js";
@@ -329,6 +335,45 @@ async function list(req: VercelRequest, res: VercelResponse) {
   res.status(200).json({ items, total: all.length });
 }
 
+// Read-only: never triggers an AI call, just returns whatever's already
+// cached in nutrition_goal_evaluations. Periods with no row are simply
+// absent from the result — the client notices the gap and lazily triggers
+// an evaluation via POST /ai/parse?kind=nutritionCompliance.
+async function listNutritionCompliance(req: VercelRequest, res: VercelResponse) {
+  const query = nutritionComplianceQuerySchema.parse({
+    timespan: req.query.timespan,
+    from: req.query.from,
+    to: req.query.to,
+  });
+
+  const rows = await db
+    .select({
+      periodKey: nutritionGoalEvaluations.periodKey,
+      goalId: nutritionGoalEvaluations.goalId,
+      subjectLabel: nutritionGoals.subjectLabel,
+      subjectType: nutritionGoals.subjectType,
+      unit: nutritionGoals.unit,
+      limitType: nutritionGoals.limitType,
+      targetQuantity: nutritionGoals.targetQuantity,
+      achievedQuantity: nutritionGoalEvaluations.achievedQuantity,
+      percentComplete: nutritionGoalEvaluations.percentComplete,
+      met: nutritionGoalEvaluations.met,
+      matchedItems: nutritionGoalEvaluations.matchedItems,
+      evaluatedAt: nutritionGoalEvaluations.evaluatedAt,
+    })
+    .from(nutritionGoalEvaluations)
+    .innerJoin(nutritionGoals, eq(nutritionGoalEvaluations.goalId, nutritionGoals.id))
+    .where(
+      and(
+        eq(nutritionGoals.timespan, query.timespan),
+        gte(nutritionGoalEvaluations.periodKey, query.from),
+        lte(nutritionGoalEvaluations.periodKey, query.to),
+      ),
+    );
+
+  res.status(200).json(rows);
+}
+
 async function getById(req: VercelRequest, res: VercelResponse, id: string) {
   for (const lookup of LOOKUPS) {
     const data = await lookup.query(id);
@@ -343,6 +388,11 @@ async function getById(req: VercelRequest, res: VercelResponse, id: string) {
 }
 
 async function get(req: VercelRequest, res: VercelResponse) {
+  if (req.query.resource === "nutrition-compliance") {
+    await listNutritionCompliance(req, res);
+    return;
+  }
+
   const id = typeof req.query.id === "string" ? req.query.id : undefined;
   if (id) {
     await getById(req, res, id);

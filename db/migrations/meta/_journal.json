@@ -50,6 +50,13 @@
       "when": 1787321469810,
       "tag": "0006_settings_private_entry_types",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787325662043,
+      "tag": "0007_gorgeous_whistler",
+      "breakpoints": true
     }
   ]
 }

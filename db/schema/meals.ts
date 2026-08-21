@@ -15,6 +15,7 @@ export const meals = pgTable("meals", {
     .references(() => sources.code),
   externalId: text("external_id"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "string" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }).defaultNow().notNull(),
 });
 
 export const mealIngredients = pgTable("meal_ingredients", {

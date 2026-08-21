@@ -1,4 +1,12 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { and, asc, eq, gt, gte, inArray, lt, or } from "drizzle-orm";
+import {
+  appSettings,
+  meals,
+  nutritionGoalEvaluations,
+  nutritionGoals,
+} from "../../db/schema/index.js";
+import { nutritionComplianceRequestSchema } from "../../shared/validation/index.js";
 import {
   AI_ENTRY_CONFIGS,
   aiMealSchema,
@@ -10,8 +18,18 @@ import {
   parseMealPhotoRequestSchema,
 } from "../_lib/aiSchemas.js";
 import { anthropic } from "../_lib/anthropic.js";
+import { db } from "../_lib/db.js";
 import { createHandler } from "../_lib/http.js";
 import { buildGeneralDigest, buildMealDigest } from "../_lib/insightsDigest.js";
+import {
+  buildNutritionComplianceSystemPrompt,
+  buildNutritionComplianceTool,
+  nutritionComplianceResultSchema,
+} from "../_lib/nutritionAiSchema.js";
+import { buildNutritionPeriodDigest } from "../_lib/nutritionDigest.js";
+import { resolvePeriod } from "../_lib/nutritionPeriod.js";
+
+const ONE_HOUR_MS = 60 * 60 * 1000;
 
 function buildEntrySystemPrompt(now: string): string {
   return [
@@ -147,6 +165,248 @@ async function parseMealPhoto(req: VercelRequest, res: VercelResponse) {
   res.status(200).json({ type: "meal", data: buildMealInitialData(parsed.data, now) });
 }
 
+type EvaluationRow = typeof nutritionGoalEvaluations.$inferSelect;
+type ActiveGoal = typeof nutritionGoals.$inferSelect;
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+async function hasNewMealSince(
+  periodStart: string,
+  periodEnd: string,
+  since: Date,
+): Promise<boolean> {
+  const sinceIso = since.toISOString();
+  const row = await db.query.meals.findFirst({
+    where: and(
+      gte(meals.eatenAt, periodStart),
+      lt(meals.eatenAt, periodEnd),
+      or(gt(meals.createdAt, sinceIso), gt(meals.updatedAt, sinceIso)),
+    ),
+  });
+  return !!row;
+}
+
+function computeEvaluationRow(
+  goal: ActiveGoal,
+  aiResult: { achievedQuantity: number; items: unknown[] },
+  periodKey: string,
+  periodStart: string,
+  periodEnd: string,
+  now: string,
+) {
+  const achieved = aiResult.achievedQuantity;
+  const target = Number(goal.targetQuantity);
+  const met = goal.limitType === "min" ? achieved >= target : achieved <= target;
+  const percentComplete = target > 0 ? round2((achieved / target) * 100) : achieved > 0 ? 100 : 0;
+  return {
+    goalId: goal.id,
+    periodKey,
+    periodStart,
+    periodEnd,
+    matchedItems: aiResult.items,
+    achievedQuantity: String(achieved),
+    percentComplete: String(percentComplete),
+    met,
+    evaluatedAt: now,
+  };
+}
+
+function toEvaluationView(row: EvaluationRow | ReturnType<typeof computeEvaluationRow>) {
+  return {
+    goalId: row.goalId,
+    achievedQuantity: Number(row.achievedQuantity),
+    percentComplete: Number(row.percentComplete),
+    met: row.met,
+    matchedItems: row.matchedItems,
+    evaluatedAt: row.evaluatedAt,
+  };
+}
+
+function respondCompliance(
+  res: VercelResponse,
+  periodKey: string,
+  timespan: string,
+  periodStart: string,
+  periodEnd: string,
+  source: "cache" | "throttled" | "ai" | "none",
+  rows: (EvaluationRow | ReturnType<typeof computeEvaluationRow>)[],
+) {
+  res.status(200).json({
+    periodKey,
+    timespan,
+    periodStart,
+    periodEnd,
+    source,
+    evaluations: rows.map(toEvaluationView),
+  });
+}
+
+async function evaluateNutritionCompliance(req: VercelRequest, res: VercelResponse) {
+  const { timespan, periodKey, now } = nutritionComplianceRequestSchema.parse(req.body);
+
+  const [settingsRow] = await db.select({ timeZone: appSettings.timeZone }).from(appSettings);
+  const timeZone = settingsRow?.timeZone ?? "Europe/Madrid";
+  const { periodStart, periodEnd } = resolvePeriod(timespan, periodKey, timeZone);
+
+  const activeGoals = await db.query.nutritionGoals.findMany({
+    where: and(eq(nutritionGoals.active, true), eq(nutritionGoals.timespan, timespan)),
+    orderBy: asc(nutritionGoals.position),
+  });
+
+  if (activeGoals.length === 0) {
+    respondCompliance(res, periodKey, timespan, periodStart, periodEnd, "none", []);
+    return;
+  }
+
+  const existingRows = await db.query.nutritionGoalEvaluations.findMany({
+    where: and(
+      inArray(
+        nutritionGoalEvaluations.goalId,
+        activeGoals.map((g) => g.id),
+      ),
+      eq(nutritionGoalEvaluations.periodKey, periodKey),
+    ),
+  });
+  const existingByGoal = new Map(existingRows.map((r) => [r.goalId, r]));
+  const isClosed = new Date(periodEnd).getTime() <= new Date(now).getTime();
+
+  let goalsToEvaluate: ActiveGoal[];
+
+  if (isClosed) {
+    // Closed periods are permanently immutable: only ever fill gaps (a goal
+    // created after this period already closed), never re-call for a goal
+    // that already has a cached row.
+    goalsToEvaluate = activeGoals.filter((g) => !existingByGoal.has(g.id));
+    if (goalsToEvaluate.length === 0) {
+      respondCompliance(res, periodKey, timespan, periodStart, periodEnd, "cache", existingRows);
+      return;
+    }
+  } else {
+    const everyGoalHasRow = activeGoals.every((g) => existingByGoal.has(g.id));
+    if (everyGoalHasRow) {
+      const lastEvaluatedAt = existingRows.reduce(
+        (latest, r) => (new Date(r.evaluatedAt) > latest ? new Date(r.evaluatedAt) : latest),
+        new Date(0),
+      );
+      const elapsedMs = new Date(now).getTime() - lastEvaluatedAt.getTime();
+      const eligible =
+        elapsedMs >= ONE_HOUR_MS &&
+        (await hasNewMealSince(periodStart, periodEnd, lastEvaluatedAt));
+      if (!eligible) {
+        respondCompliance(
+          res,
+          periodKey,
+          timespan,
+          periodStart,
+          periodEnd,
+          "throttled",
+          existingRows,
+        );
+        return;
+      }
+    }
+    // Either a goal has never been evaluated for this period (bypasses the
+    // throttle — a new goal's first look shouldn't wait an hour) or the
+    // throttle/new-meal checks passed: refresh the whole batch in one call.
+    goalsToEvaluate = activeGoals;
+  }
+
+  const digest = await buildNutritionPeriodDigest(periodStart, periodEnd);
+  const message = await anthropic.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    // A batch can cover dozens of goals in one call (by design, to keep API
+    // usage low) — 4096 was truncating mid-JSON for large batches. Haiku 4.5
+    // supports up to 64000; 16000 gives generous headroom without routinely
+    // generating anywhere near that in the common case (most goals resolve
+    // to a terse achievedQuantity: 0, items: [] when there's no match).
+    max_tokens: 16000,
+    system: buildNutritionComplianceSystemPrompt(
+      goalsToEvaluate.map((g) => ({
+        id: g.id,
+        subjectLabel: g.subjectLabel,
+        subjectType: g.subjectType,
+        limitType: g.limitType,
+        targetQuantity: g.targetQuantity,
+        unit: g.unit,
+        clarification: g.clarification,
+      })),
+      digest,
+    ),
+    messages: [{ role: "user", content: "Evalúa el cumplimiento de los objetivos indicados." }],
+    tools: [buildNutritionComplianceTool()],
+    tool_choice: { type: "tool", name: "nutrition_compliance", disable_parallel_tool_use: true },
+  });
+
+  if (message.stop_reason === "max_tokens") {
+    console.error(
+      `nutritionCompliance: response truncated at max_tokens for ${goalsToEvaluate.length} goals`,
+    );
+    res.status(502).json({ error: "La respuesta de la IA se cortó por ser demasiado larga." });
+    return;
+  }
+
+  const toolUse = message.content.find((block) => block.type === "tool_use");
+  if (!toolUse) {
+    res.status(502).json({ error: "No se pudo evaluar el cumplimiento." });
+    return;
+  }
+  const parsed = nutritionComplianceResultSchema.safeParse(toolUse.input);
+  if (!parsed.success) {
+    console.error(
+      "nutritionCompliance: unexpected tool_use shape",
+      parsed.error.issues,
+      toolUse.input,
+    );
+    res.status(502).json({ error: "La IA devolvió datos con un formato inesperado." });
+    return;
+  }
+
+  const resultsByGoal = new Map(parsed.data.results.map((r) => [r.goalId, r]));
+  const computedRows: ReturnType<typeof computeEvaluationRow>[] = [];
+  for (const goal of goalsToEvaluate) {
+    const aiResult = resultsByGoal.get(goal.id);
+    // The model omitted this goal — leave any existing row untouched rather
+    // than caching a false zero, especially critical for closed periods.
+    if (!aiResult) continue;
+    computedRows.push(computeEvaluationRow(goal, aiResult, periodKey, periodStart, periodEnd, now));
+  }
+
+  if (computedRows.length > 0) {
+    await db.transaction(async (tx) => {
+      for (const row of computedRows) {
+        await tx
+          .insert(nutritionGoalEvaluations)
+          .values(row)
+          .onConflictDoUpdate({
+            target: [nutritionGoalEvaluations.goalId, nutritionGoalEvaluations.periodKey],
+            set: {
+              periodStart: row.periodStart,
+              periodEnd: row.periodEnd,
+              matchedItems: row.matchedItems,
+              achievedQuantity: row.achievedQuantity,
+              percentComplete: row.percentComplete,
+              met: row.met,
+              evaluatedAt: row.evaluatedAt,
+            },
+          });
+      }
+    });
+  }
+
+  const mergedByGoal = new Map<string, EvaluationRow | ReturnType<typeof computeEvaluationRow>>(
+    existingRows.map((r) => [r.goalId, r]),
+  );
+  for (const row of computedRows) {
+    mergedByGoal.set(row.goalId, row);
+  }
+
+  respondCompliance(res, periodKey, timespan, periodStart, periodEnd, "ai", [
+    ...mergedByGoal.values(),
+  ]);
+}
+
 // Single serverless function fronting all AI endpoints (Vercel's Hobby plan
 // caps deployments at 12 functions) — routed by a `kind` query param.
 async function parse(req: VercelRequest, res: VercelResponse) {
@@ -158,7 +418,16 @@ async function parse(req: VercelRequest, res: VercelResponse) {
     await generateInsights(req, res);
     return;
   }
+  if (req.query.kind === "nutritionCompliance") {
+    await evaluateNutritionCompliance(req, res);
+    return;
+  }
   await parseEntry(req, res);
 }
+
+// nutritionCompliance can batch dozens of goals into one Anthropic call;
+// raise the function's execution ceiling from Vercel's default so a large
+// batch doesn't get killed mid-request (60s is the Hobby-plan max).
+export const config = { maxDuration: 60 };
 
 export default createHandler({ POST: parse });
