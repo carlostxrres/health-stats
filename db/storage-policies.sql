@@ -17,6 +17,16 @@ on storage.objects for select
 to authenticated
 using (bucket_id = 'health-photos');
 
+-- /view and its sub-routes (e.g. /view/feed) are intentionally public so the
+-- app owner's trainer can view progress without logging in. Those pages
+-- render photos client-side via createSignedUrl(), which needs to pass this
+-- select policy for the `anon` role too, or every photo silently falls back
+-- to a placeholder for logged-out viewers.
+create policy "Anonymous users can read health photos"
+on storage.objects for select
+to anon
+using (bucket_id = 'health-photos');
+
 create policy "Authenticated users can upload health photos"
 on storage.objects for insert
 to authenticated
