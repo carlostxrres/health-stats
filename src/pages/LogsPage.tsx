@@ -1,9 +1,17 @@
 import { ENTRY_TYPES, type EntryTypeCode } from "@shared/entryTypes";
+import { EllipsisVertical } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { Field } from "@/components/forms/Field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,6 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { apiClient } from "@/lib/api-client";
+import { buildCopyInitialData } from "@/lib/copyEntry";
 
 type NormalizedEntry = {
   id: string;
@@ -57,6 +66,7 @@ export function LogsPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [copyingId, setCopyingId] = useState<string | null>(null);
 
   async function load(offset: number, append: boolean) {
     setLoading(true);
@@ -86,6 +96,22 @@ export function LogsPage() {
   useEffect(() => {
     load(0, false);
   }, [selectedTypes, from, to, sort]);
+
+  async function handleCopyToNew(item: NormalizedEntry) {
+    setCopyingId(item.id);
+    try {
+      const res = await apiClient.get<{ type: EntryTypeCode; data: unknown }>(
+        `/entries/${item.id}`,
+      );
+      navigate("/log", {
+        state: { copyType: res.type, copyData: buildCopyInitialData(res.type, res.data) },
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo copiar la entrada.");
+    } finally {
+      setCopyingId(null);
+    }
+  }
 
   function toggleType(code: EntryTypeCode) {
     setSelectedTypes((prev) => {
@@ -167,27 +193,42 @@ export function LogsPage() {
               <TableHead>Entrada</TableHead>
               <TableHead>Tipo</TableHead>
               <TableHead>Origen</TableHead>
+              <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {items.map((item) => (
-              <TableRow
-                key={item.id}
-                className="cursor-pointer"
-                onClick={() => navigate(`/log/${item.id}`)}
-              >
+              <TableRow key={item.id}>
                 <TableCell className="text-muted-foreground">
                   {formatDateTime(item.occurredAt)}
                 </TableCell>
                 <TableCell className="max-w-60 truncate whitespace-nowrap font-medium">
-                  <Link to={`/log/${item.id}`} onClick={(e) => e.stopPropagation()}>
-                    {item.title}
-                  </Link>
+                  {item.title}
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline">{typeLabel(item.type)}</Badge>
                 </TableCell>
                 <TableCell className="text-muted-foreground capitalize">{item.source}</TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      render={<Button type="button" variant="ghost" size="icon-sm" />}
+                    >
+                      <EllipsisVertical className="size-4" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => navigate(`/log/${item.id}`)}>
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        disabled={copyingId === item.id}
+                        onClick={() => handleCopyToNew(item)}
+                      >
+                        Copiar a nuevo
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

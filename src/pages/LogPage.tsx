@@ -1,6 +1,6 @@
 import { ENTRY_TYPES, type EntryTypeCode } from "@shared/entryTypes";
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { AiPromptBar } from "@/components/AiPromptBar";
 import { BodyPhotoForm, type BodyPhotoInitialData } from "@/components/forms/BodyPhotoForm";
 import {
@@ -87,15 +87,26 @@ function renderForm(
 export function LogPage() {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
-  // Lets an external link (e.g. a recipe site) deep-link into /log with a
-  // meal prefilled: /log?type=meal&title=... Only read on the create route —
-  // editing an existing entry (/log/:id) always uses the loaded entry as the
-  // source of truth. Only matters for this component's initial mount: the
-  // useState initializers below consume it once, before it's discarded.
+  // Two ways to arrive at /log pre-filled, both create-only (editing via
+  // /log/:id always uses the loaded entry as the source of truth) and both
+  // only matter for this component's initial mount — the useState
+  // initializers below consume them once, before they're discarded.
+  //
+  // 1. An external link (e.g. a recipe site) deep-linking in with a meal
+  //    prefilled: /log?type=meal&title=...
   const linkedMealData = id ? null : buildMealInitialDataFromParams(searchParams);
-  const [selected, setSelected] = useState<EntryTypeCode>(linkedMealData ? "meal" : "metric");
-  const [initialData, setInitialData] = useState<unknown>(linkedMealData);
+  // 2. The /logs "Copy to new" action, passing the source entry's data
+  //    through router navigation state (works for any entry type, unlike
+  //    the meal-only query-param link above).
+  const copyState = !id
+    ? (location.state as { copyType?: EntryTypeCode; copyData?: unknown } | null)
+    : null;
+  const prefillType = copyState?.copyType ?? (linkedMealData ? "meal" : undefined);
+  const prefillData = copyState?.copyData ?? linkedMealData;
+  const [selected, setSelected] = useState<EntryTypeCode>(prefillType ?? "metric");
+  const [initialData, setInitialData] = useState<unknown>(prefillData ?? null);
   const [mealPhotos, setMealPhotos] = useState<UploadedPhotoFile[]>([]);
   // Bumped on every AI parse so the form remounts even when the AI picks the
   // same type that was already selected — `key={id ?? selected}` alone

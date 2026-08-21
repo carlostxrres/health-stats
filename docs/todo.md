@@ -8,23 +8,6 @@ Que haya varios botones: uno sobre comida, uno general, etc.
 
 También puede haber un botón que añada texto libre para hacer preguntas específicas (o incluso un pequeño chatbot).
 
-## /logs: add context menu in every item
-
-Currently, in the page /logs, when the user clicks on a log, it opens the page to edit it (e.g. /log/33f2944a-f838-4aa1-9869-8a9003cbdec5).
-
-We are going to change this.
-
-The table rows will not be links or do anything on click.
-
-Every row will have a [shadcn's dropdown menu](https://ui.shadcn.com/docs/components/base/dropdown-menu).
-
-We have to brainstorm what actions can be performed on every item, to be put in the dropdown menu.
-
-I have these two in mind:
-
-- Edit (i.e., navigate to /log/33f2944a-f838-4aa1-9869-8a9003cbdec5, as we were doing on click so far)
-- "Copy to new" - create a new log in /log, with the fields already set equal to the original one. Only some fields should not be equal (but blank): date and time, and images. Maybe other ones should be also left blank. Before doing this, we might consider planning the task "Add query params to /log".
-
 ## Permitir logs privados
 
 No visibles si no se inicia sesión.
@@ -505,3 +488,10 @@ Landing on `/log?type=meal&...` pre-selects "Meal" in the type selector and open
 ```
 
 `ingredients` is a JSON array of `{ ingredient: string, quantityValue?: number, quantityUnit?: string }`, e.g. `[{"ingredient":"Pollo","quantityValue":200,"quantityUnit":"g"},{"ingredient":"Aguacate"}]`, URL-encoded.
+
+## /logs: add context menu in every item
+
+Installed shadcn's `dropdown-menu`. Rows no longer navigate on click; each has a menu with:
+
+- **Editar** — same navigation as the old row-click.
+- **Copiar a nuevo** — fetches the entry via the existing `GET /entries/:id`, then `src/lib/copyEntry.ts` blanks exactly date/time and photos (per type: `eatenAt`+photos for meals, `startedAt`+photos for workouts, both `wentToBedAt`/`wokeUpAt` for sleep, `recoveredAt` too for health episodes, etc.) and keeps everything else. The result is passed to `/log` via router navigation state rather than query params — works for all 8 entry types, not just meals, without reopening the generic-query-params question deferred earlier.
