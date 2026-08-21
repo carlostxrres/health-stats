@@ -1,6 +1,6 @@
 import { WORKOUT_TYPES } from "@shared/metricCatalog";
 import type { WorkoutWithDetails } from "@shared/types";
-import { Dumbbell } from "lucide-react";
+import { Dumbbell, MapPin } from "lucide-react";
 import { MetricBadges } from "./MetricBadges";
 import { PostCard } from "./PostCard";
 import { PostPhotoCarousel } from "./PostPhotoCarousel";
@@ -16,6 +16,12 @@ export function WorkoutPost({ workout }: { workout: WorkoutWithDetails }) {
         {typeLabel}
         {workout.durationMinutes ? ` de ${workout.durationMinutes} minutos` : ""}
       </p>
+      {workout.location && (
+        <p className="flex items-center gap-1 text-sm text-muted-foreground">
+          <MapPin className="size-3.5" />
+          {workout.location}
+        </p>
+      )}
       {workout.notes && <p className="text-sm text-muted-foreground">{workout.notes}</p>}
       {workout.photos.length > 0 && <PostPhotoCarousel photos={workout.photos} />}
       {workout.metrics.length > 0 && <MetricBadges metrics={workout.metrics} />}

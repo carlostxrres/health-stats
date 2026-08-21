@@ -25,6 +25,7 @@ export type WorkoutInitialData = {
   workoutType: string;
   startedAt: string;
   durationMinutes: number | null;
+  location: string | null;
   notes: string | null;
   metrics: { metricType: string; value: string; unit: string }[];
   sets: { exerciseName: string; setNumber: number; reps: number | null; weightKg: string | null }[];
@@ -35,6 +36,7 @@ type FormValues = {
   workoutType: string;
   startedAtLocal: string;
   durationMinutes: string;
+  location: string;
   notes: string;
   metrics: { metricType: string; value: string; unit: string }[];
   sets: { exerciseName: string; setNumber: string; reps: string; weightKg: string }[];
@@ -67,6 +69,7 @@ export function WorkoutForm({
           startedAtLocal: isoToLocalInputValue(initialData.startedAt),
           durationMinutes:
             initialData.durationMinutes != null ? String(initialData.durationMinutes) : "",
+          location: initialData.location ?? "",
           notes: initialData.notes ?? "",
           metrics: initialData.metrics.map((m) => ({
             metricType: m.metricType,
@@ -84,6 +87,7 @@ export function WorkoutForm({
           workoutType: WORKOUT_TYPES[0].code,
           startedAtLocal: nowAsLocalInputValue(),
           durationMinutes: "",
+          location: "",
           notes: "",
           metrics: [],
           sets: [],
@@ -101,6 +105,7 @@ export function WorkoutForm({
       startedAt: localInputToIso(values.startedAtLocal),
       durationMinutes: values.durationMinutes ? Number(values.durationMinutes) : undefined,
       workoutType: values.workoutType,
+      location: values.location || undefined,
       notes: values.notes || undefined,
       metrics: values.metrics
         .filter((m) => m.metricType.trim() !== "")
@@ -135,6 +140,7 @@ export function WorkoutForm({
         workoutType: values.workoutType,
         startedAtLocal: nowAsLocalInputValue(),
         durationMinutes: "",
+        location: "",
         notes: "",
         metrics: [],
         sets: [],
@@ -174,6 +180,10 @@ export function WorkoutForm({
 
       <Field label="Duración (min, opcional)">
         <Input type="number" {...register("durationMinutes")} />
+      </Field>
+
+      <Field label="Lugar (opcional)">
+        <Input {...register("location")} />
       </Field>
 
       <div className="flex flex-col gap-2">

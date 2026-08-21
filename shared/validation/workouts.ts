@@ -18,6 +18,7 @@ export const workoutInputSchema = z.object({
   startedAt: z.iso.datetime({ offset: true }),
   durationMinutes: z.number().int().min(0).optional(),
   workoutType: z.enum(WORKOUT_TYPE_CODES),
+  location: z.string().max(200).optional(),
   notes: z.string().max(2000).optional(),
   metrics: z.array(workoutMetricInputSchema).default([]),
   sets: z.array(workoutSetInputSchema).default([]),

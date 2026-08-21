@@ -102,6 +102,7 @@ const aiWorkoutSchema = z.object({
     .optional()
     .describe("Fecha y hora ISO-8601 con offset. Omite si el texto no la menciona."),
   durationMinutes: z.number().int().min(0).optional(),
+  location: z.string().max(200).optional(),
   notes: z.string().max(2000).optional(),
   metrics: z
     .array(
@@ -256,6 +257,7 @@ export const AI_ENTRY_CONFIGS: AiEntryConfig<z.ZodTypeAny>[] = [
       workoutType: input.workoutType,
       startedAt: input.startedAt ?? now,
       durationMinutes: input.durationMinutes ?? null,
+      location: input.location ?? null,
       notes: input.notes ?? null,
       metrics: input.metrics.map((m) => ({
         metricType: m.metricType,

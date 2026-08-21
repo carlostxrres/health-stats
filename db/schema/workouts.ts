@@ -14,6 +14,7 @@ export const workouts = pgTable("workouts", {
   workoutType: text("workout_type")
     .notNull()
     .references(() => workoutTypes.code),
+  location: text("location"),
   notes: text("notes"),
   source: text("source")
     .notNull()

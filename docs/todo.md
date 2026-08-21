@@ -1,9 +1,5 @@
 # To do
 
-## Feed: show location in "workout" posts
-
-Just like in "Meal" posts.
-
 ## New feature: AI insights
 
 Que con un botón se mande a una IA un buen prompt con información de la base de datos. Y que la IA de opinión sobre cosas. Para saber, con texto natural, cosas como cómo estoy comiendo, si estoy comiendo suficiente pescado, qué tendencias tengo que hago cada vez más / menos, etc.
@@ -71,10 +67,6 @@ No visibles si no se inicia sesión.
 Se puede hacer para tipos enteros, desde ajustes.
 
 O para logs específicos, desde /log. Bueno, esto lo tenemos que considerar.
-
-## /log (training) add new prop
-
-Entrenamiento: añadir entrada opcional "lugar", igual que en meals.
 
 ## /log (meal) AI prompt adjustment
 
@@ -515,3 +507,11 @@ Añadir una propiedad obligatoria `mealType` a los meals de esta app, para marca
 ## Add this data directly to the database
 
 Inserted 8 of the 9 weight records as `weight` metric entries (manual source). The 9th (2026-08-10 18:18, 85.95kg) was already in the database. Two dates in the original note were corrected as typos: "2026-07-08 20:00" → "2026-08-08 20:00", and "2016-08-10 18:18" → "2026-08-10 18:18" (superseded by the pre-existing row).
+
+## /log (training) add new prop
+
+Added optional `location` field to workouts, mirroring meals: DB column + migration, `workoutInputSchema`, create/update API handlers, "Lugar (opcional)" form field, and the AI prompt-bar schema.
+
+## Feed: show location in "workout" posts
+
+WorkoutPost.tsx now shows the location with a MapPin icon, matching MealPost.tsx.

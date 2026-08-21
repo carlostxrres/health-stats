@@ -32,6 +32,7 @@ async function create(req: VercelRequest, res: VercelResponse) {
         startedAt: input.startedAt,
         durationMinutes: input.durationMinutes,
         workoutType: input.workoutType,
+        location: input.location,
         notes: input.notes,
       })
       .returning();
@@ -92,6 +93,7 @@ async function update(req: VercelRequest, res: VercelResponse) {
         startedAt: input.startedAt,
         durationMinutes: input.durationMinutes ?? null,
         workoutType: input.workoutType,
+        location: input.location ?? null,
         notes: input.notes ?? null,
       })
       .where(eq(workouts.id, id))

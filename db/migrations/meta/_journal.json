@@ -36,6 +36,13 @@
       "when": 1787164517495,
       "tag": "0004_rare_jimmy_woo",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1787310512421,
+      "tag": "0005_workouts_add_location",
+      "breakpoints": true
     }
   ]
 }
