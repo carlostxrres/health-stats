@@ -68,10 +68,6 @@ Se puede hacer para tipos enteros, desde ajustes.
 
 O para logs específicos, desde /log. Bueno, esto lo tenemos que considerar.
 
-## /log (meal) AI prompt adjustment
-
-IA comida: que añada descripción
-
 
 # Thinking
 
@@ -515,3 +511,7 @@ Added optional `location` field to workouts, mirroring meals: DB column + migrat
 ## Feed: show location in "workout" posts
 
 WorkoutPost.tsx now shows the location with a MapPin icon, matching MealPost.tsx.
+
+## /log (meal) AI prompt adjustment
+
+IA comida: que añada descripción. The `description` field already existed in the AI's meal schema but had no `.describe()` annotation telling the model what belongs there, so it was rarely filled. Added guidance to extract qualitative details the user mentions (taste, preparation, how they felt about it) — separate from title/ingredients — and leave it blank when there's nothing beyond the dish itself. Verified against the real Anthropic call: "estaba buenísima aunque le faltaba sal" now lands in `description`; a bare "tostada con tomate" leaves it empty.

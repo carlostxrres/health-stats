@@ -63,7 +63,13 @@ const aiMetricSchema = z.object({
 export const aiMealSchema = z.object({
   mealType: z.enum(MEAL_TYPES).describe(`Tipo de comida. Valores: ${mealTypeDescription}.`),
   title: z.string().min(1).max(200),
-  description: z.string().max(2000).optional(),
+  description: z
+    .string()
+    .max(2000)
+    .optional()
+    .describe(
+      "Detalles adicionales sobre la comida que el usuario mencione y que no encajen en el título ni en los ingredientes: sabor, cómo la preparó, cómo se sintió, contexto, etc. Omite este campo si el texto no aporta nada más allá del plato en sí.",
+    ),
   eatenAt: z.iso
     .datetime({ offset: true })
     .optional()
