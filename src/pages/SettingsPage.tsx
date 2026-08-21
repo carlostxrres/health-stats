@@ -264,7 +264,7 @@ export function SettingsPage() {
         <CardHeader>
           <CardTitle>Objetivos</CardTitle>
           <CardDescription>
-            Metas personales. Todavía no se representan en los gráficos, solo se guardan.
+            Metas personales.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
