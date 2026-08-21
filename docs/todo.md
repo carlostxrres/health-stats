@@ -8,26 +8,6 @@ Que haya varios botones: uno sobre comida, uno general, etc.
 
 También puede haber un botón que añada texto libre para hacer preguntas específicas (o incluso un pequeño chatbot).
 
-## Add query params to /log
-
-I have recipe website and I'd like to add a link to each recipe that brings me here with some fields already filled in.
-
-This could be done with query params.
-
-Query params could also be used for the AI feature filling some fields, or by the "Copy to new" feature I'm describing someplace else in this document.
-
-We should consider pros and cons of doing this.
-
-Here is something I wrote a while ago about this:
-
-```
-Quiero plantear la posibilidad de que `/log` tenga search query params. Esto permitiría persistir los datos a medio llenar del formulario y crear links en otras apps (como una app que tengo de recetas, u otra de planificación de comida) para simplificar mucho la entrada de comidas. También le daría a la IA una interfaz sencilla para "comunicar su veredicto".
-
-Esto plantea alguna dificultad, como cómo se representaría una imagen en la URL, o cuál debe ser la fuente de la verdad en casos de edición (`/log/:id`), y posiblemente nos obligue a tomar decisiones. Por eso quiero que lo pensemos.
-
-Eventualmente, podríamos considerar que el input fuera opcionalmente una imagen (para registrar comidas) o un audio. De momento hagámoslo en modo texto solo.
-```
-
 ## /logs: add context menu in every item
 
 Currently, in the page /logs, when the user clicks on a log, it opens the page to edit it (e.g. /log/33f2944a-f838-4aa1-9869-8a9003cbdec5).
@@ -508,3 +488,20 @@ Sleep overlap already existed. Added the other three checks:
 - **Meal-type time window** (confirm): breakfast 05:00–11:00, lunch 12:00–16:00, dinner 19:00–23:00 (local time), snack exempt. Outside the window for the selected type shows a confirm dialog in MealForm.
 - **One breakfast/lunch/dinner per day** (alert, blocking): server-side check in `api/meals.ts` (`findExistingMealType`, mirrors `findOverlap`'s pattern), returns 409, MealForm shows a blocking alert. Snacks are unlimited. Verified directly against the DB, including the late-night day-boundary edge case (a 23:55 dinner doesn't collide with the next day's dinner).
 - **Future-time logging** (confirm, all 8 entry types): a shared `useConfirmDialog` hook (`src/hooks/useConfirmDialog.tsx`) plus `confirmIfFuture` (`src/lib/futureTime.ts`, 5-minute grace window) wired into every form's submit handler, checking each type's primary timestamp (eatenAt, startedAt, recordedAt, takenAt, wokeUpAt, occurredAt).
+
+## Add query params to /log
+
+Meal-only for now (the concrete recipe-site use case), not a generic mechanism for all entry types — `src/lib/mealLinkParams.ts`. `/log/:id` (edit) ignores query params entirely; the loaded entry is always the source of truth. Never reads `eatenAt` (always defaults to "now") or photos (can't round-trip through a URL) — invalid/malformed params (bad JSON, unknown mealType) fall back to defaults instead of failing.
+
+Landing on `/log?type=meal&...` pre-selects "Meal" in the type selector and opens the form prefilled, while still letting you switch type. URL contract for the recipe site:
+
+```
+/log?type=meal
+  &title=<string>
+  &mealType=breakfast|lunch|dinner|snack   (optional, defaults to breakfast)
+  &description=<string>                     (optional)
+  &location=<string>                        (optional)
+  &ingredients=<URL-encoded JSON array>     (optional)
+```
+
+`ingredients` is a JSON array of `{ ingredient: string, quantityValue?: number, quantityUnit?: string }`, e.g. `[{"ingredient":"Pollo","quantityValue":200,"quantityUnit":"g"},{"ingredient":"Aguacate"}]`, URL-encoded.

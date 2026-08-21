@@ -1,6 +1,6 @@
 import { ENTRY_TYPES, type EntryTypeCode } from "@shared/entryTypes";
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { AiPromptBar } from "@/components/AiPromptBar";
 import { BodyPhotoForm, type BodyPhotoInitialData } from "@/components/forms/BodyPhotoForm";
 import {
@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { apiClient } from "@/lib/api-client";
+import { buildMealInitialDataFromParams } from "@/lib/mealLinkParams";
 
 function renderForm(
   code: EntryTypeCode,
@@ -86,8 +87,15 @@ function renderForm(
 export function LogPage() {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
-  const [selected, setSelected] = useState<EntryTypeCode>("metric");
-  const [initialData, setInitialData] = useState<unknown>(null);
+  const [searchParams] = useSearchParams();
+  // Lets an external link (e.g. a recipe site) deep-link into /log with a
+  // meal prefilled: /log?type=meal&title=... Only read on the create route —
+  // editing an existing entry (/log/:id) always uses the loaded entry as the
+  // source of truth. Only matters for this component's initial mount: the
+  // useState initializers below consume it once, before it's discarded.
+  const linkedMealData = id ? null : buildMealInitialDataFromParams(searchParams);
+  const [selected, setSelected] = useState<EntryTypeCode>(linkedMealData ? "meal" : "metric");
+  const [initialData, setInitialData] = useState<unknown>(linkedMealData);
   const [mealPhotos, setMealPhotos] = useState<UploadedPhotoFile[]>([]);
   // Bumped on every AI parse so the form remounts even when the AI picks the
   // same type that was already selected — `key={id ?? selected}` alone
