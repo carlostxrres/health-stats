@@ -1,14 +1,5 @@
 # To do
 
-## New feature: AI insights
-
-Que con un botón se mande a una IA un buen prompt con información de la base de datos. Y que la IA de opinión sobre cosas. Para saber, con texto natural, cosas como cómo estoy comiendo, si estoy comiendo suficiente pescado, qué tendencias tengo que hago cada vez más / menos, etc.
-
-Que haya varios botones: uno sobre comida, uno general, etc.
-
-También puede haber un botón que añada texto libre para hacer preguntas específicas (o incluso un pequeño chatbot).
-
-
 # Thinking
 
 ## Run React-Doctor
@@ -497,3 +488,16 @@ New Settings → Privacidad card lets you check which of the 8 entry types are h
 Verified live against `vercel dev`: marked `poop` private via a direct DB write, confirmed `/api/poop-entries` returns `[]`, `/api/entries` excludes it from aggregated results and by-id lookups 404, while unrelated types (`meals`) were unaffected — then reset it back.
 
 **Not done**: per-entry privacy ("O para logs específicos, desde /log"). Scoped out for now since it needs its own schema decision (a column per table vs. a shared side table) — the doc itself flagged this as unresolved ("esto lo tenemos que considerar"), and type-level privacy already solves the stated problem for anything sensitive enough to warrant hiding a whole category (e.g. "shit" entries). Worth a follow-up if you want finer-grained control later.
+
+## New feature: AI insights
+
+New view at `/view/insights` ("Insights IA" in the sidebar). Two preset buttons (**Comida**, **General**) send a canned question to the AI; a free-text input below lets you ask follow-ups or open with your own question (defaults to the "general" digest if nothing's selected yet). Conversation history is kept in React state only — not persisted — so each chat resets on page reload, matching the doc's "modo texto solo" spirit elsewhere; no chatbot history storage was built.
+
+Backend is a new `kind=insights` branch in `api/ai/parse.ts` (the existing AI endpoint, reused rather than a new function — already at Vercel's 12-function Hobby cap). Two digest builders in `api/_lib/insightsDigest.ts` turn recent DB rows into compact text summaries rather than raw JSON dumps:
+
+- **Comida**: last 30 days of meals, chronological detail plus counts by type and top-15 ingredient frequency.
+- **General**: 30-day weight trend, 14-day sleep average, 30-day meal/workout/poop counts.
+
+Each request recomputes the digest fresh and sends it as the system prompt alongside the client-held chat history — stateless server-side, always current data.
+
+Verified live: ran the real digest builders against the actual database and made real Anthropic calls (not mocked). The meal-focus answer correctly flagged low fish intake with specific counts — directly matching the doc's own example ("si estoy comiendo suficiente pescado"). The general-focus answer covered weight/sleep/meals/workouts, and a follow-up question in the same thread correctly built on the prior answer, confirming multi-turn history works.

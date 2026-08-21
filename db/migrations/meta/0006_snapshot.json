@@ -41,12 +41,8 @@
           "name": "body_photo_files_body_photo_id_body_photos_id_fk",
           "tableFrom": "body_photo_files",
           "tableTo": "body_photos",
-          "columnsFrom": [
-            "body_photo_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["body_photo_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -107,12 +103,8 @@
           "name": "body_photos_source_sources_code_fk",
           "tableFrom": "body_photos",
           "tableTo": "sources",
-          "columnsFrom": [
-            "source"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["source"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -178,12 +170,8 @@
           "name": "meal_ingredients_meal_id_meals_id_fk",
           "tableFrom": "meal_ingredients",
           "tableTo": "meals",
-          "columnsFrom": [
-            "meal_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["meal_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -231,12 +219,8 @@
           "name": "meal_photos_meal_id_meals_id_fk",
           "tableFrom": "meal_photos",
           "tableTo": "meals",
-          "columnsFrom": [
-            "meal_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["meal_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -315,12 +299,8 @@
           "name": "meals_source_sources_code_fk",
           "tableFrom": "meals",
           "tableTo": "sources",
-          "columnsFrom": [
-            "source"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["source"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -387,12 +367,8 @@
           "name": "medications_source_sources_code_fk",
           "tableFrom": "medications",
           "tableTo": "sources",
-          "columnsFrom": [
-            "source"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["source"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -597,12 +573,8 @@
           "name": "metric_entries_metric_type_metric_definitions_code_fk",
           "tableFrom": "metric_entries",
           "tableTo": "metric_definitions",
-          "columnsFrom": [
-            "metric_type"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["metric_type"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -610,12 +582,8 @@
           "name": "metric_entries_source_sources_code_fk",
           "tableFrom": "metric_entries",
           "tableTo": "sources",
-          "columnsFrom": [
-            "source"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["source"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -688,12 +656,8 @@
           "name": "health_episodes_source_sources_code_fk",
           "tableFrom": "health_episodes",
           "tableTo": "sources",
-          "columnsFrom": [
-            "source"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["source"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -779,12 +743,8 @@
           "name": "sleep_sessions_source_sources_code_fk",
           "tableFrom": "sleep_sessions",
           "tableTo": "sources",
-          "columnsFrom": [
-            "source"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["source"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -892,12 +852,8 @@
           "name": "poop_entries_source_sources_code_fk",
           "tableFrom": "poop_entries",
           "tableTo": "sources",
-          "columnsFrom": [
-            "source"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["source"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -945,12 +901,8 @@
           "name": "poop_entry_photos_poop_entry_id_poop_entries_id_fk",
           "tableFrom": "poop_entry_photos",
           "tableTo": "poop_entries",
-          "columnsFrom": [
-            "poop_entry_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["poop_entry_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1144,12 +1096,8 @@
           "name": "workout_metrics_workout_id_workouts_id_fk",
           "tableFrom": "workout_metrics",
           "tableTo": "workouts",
-          "columnsFrom": [
-            "workout_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["workout_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1197,12 +1145,8 @@
           "name": "workout_photos_workout_id_workouts_id_fk",
           "tableFrom": "workout_photos",
           "tableTo": "workouts",
-          "columnsFrom": [
-            "workout_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["workout_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1268,12 +1212,8 @@
           "name": "workout_sets_workout_id_workouts_id_fk",
           "tableFrom": "workout_sets",
           "tableTo": "workouts",
-          "columnsFrom": [
-            "workout_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["workout_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1377,12 +1317,8 @@
           "name": "workouts_workout_type_workout_types_code_fk",
           "tableFrom": "workouts",
           "tableTo": "workout_types",
-          "columnsFrom": [
-            "workout_type"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["workout_type"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1390,12 +1326,8 @@
           "name": "workouts_source_sources_code_fk",
           "tableFrom": "workouts",
           "tableTo": "sources",
-          "columnsFrom": [
-            "source"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["source"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }

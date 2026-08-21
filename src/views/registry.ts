@@ -1,6 +1,7 @@
-import { AlarmClock, BedDouble, CalendarDays, Flame, Rss, Scale } from "lucide-react";
+import { AlarmClock, BedDouble, CalendarDays, Flame, Rss, Scale, Sparkles } from "lucide-react";
 import type { ComponentType } from "react";
 import { FeedView } from "@/views/feed/FeedView";
+import { InsightsView } from "@/views/insights/InsightsView";
 import { PoopRegularityView } from "@/views/poop-regularity/PoopRegularityView";
 import { SleepPeriodsView } from "@/views/sleep-periods/SleepPeriodsView";
 import { SleepTimesView } from "@/views/sleep-times/SleepTimesView";
@@ -50,6 +51,12 @@ export const VIEWS: ViewDefinition[] = [
     name: "Regularity",
     icon: Flame,
     component: PoopRegularityView,
+  },
+  {
+    slug: "insights",
+    name: "Insights IA",
+    icon: Sparkles,
+    component: InsightsView,
   },
 ];
 

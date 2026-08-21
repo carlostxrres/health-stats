@@ -366,3 +366,15 @@ export const parseMealPhotoRequestSchema = z
     message: "Las imágenes son demasiado grandes en conjunto.",
     path: ["images"],
   });
+
+export const insightsRequestSchema = z.object({
+  focus: z.enum(["meal", "general"]),
+  question: z.string().min(1).max(1000),
+  // Prior turns in this chat, kept client-side only (not persisted) so the
+  // model can reference earlier answers within the same session.
+  history: z
+    .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(4000) }))
+    .max(20)
+    .default([]),
+  now: z.iso.datetime({ offset: true }),
+});
