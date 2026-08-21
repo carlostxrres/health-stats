@@ -8,21 +8,6 @@ Que haya varios botones: uno sobre comida, uno general, etc.
 
 También puede haber un botón que añada texto libre para hacer preguntas específicas (o incluso un pequeño chatbot).
 
-## Check for stuff before saving a log in the database
-
-When the user tries to log something, depending on the type of log we will perform some checks on the existing rows of the database, in order to prevent human error when logging things, and also avoid implausible information in the database. If we find something odd, we will inform the user.
-
-Some of these checks are just informing the user for a double check. Those are being shown in "confirm"-like modals (using shadcn components).
-
-Others just disallow the user to log it. Those are being shown in "alert"-like modals (using shadcn components).
-
-We have to think which checks to perform. Here are some initial ideas:
-
-- When logging a meal, for the type of meal (desayuno|almuerzo|cena): set reasonible timespans for each type. If user is logging it outside its timespan, just show a "confirm"-like modal so that the user confirms he actually wants to log it. Something like "are you sure this should be a breakfast, given it happened at 15:30?", "Yes, it is a breakfast - No, I'll change the meal type" (but better worded). The type "snack" has no timespan, it can happen whenever.
-- When logging a meal, for desayuno, almuerzo, and cena, there can be one for the day. So when the user tries to log one on the day where there's already one, an "alert"-like modal appears, informing the user they can't log it and the reason.
-- When logging anything for a future time, a "confirm"-like modal appears too.
-- When logging a sleep time that overlaps another sleept ime, an "alert"-like modal appears.
-
 ## Add query params to /log
 
 I have recipe website and I'd like to add a link to each recipe that brings me here with some fields already filled in.
@@ -515,3 +500,11 @@ WorkoutPost.tsx now shows the location with a MapPin icon, matching MealPost.tsx
 ## /log (meal) AI prompt adjustment
 
 IA comida: que añada descripción. The `description` field already existed in the AI's meal schema but had no `.describe()` annotation telling the model what belongs there, so it was rarely filled. Added guidance to extract qualitative details the user mentions (taste, preparation, how they felt about it) — separate from title/ingredients — and leave it blank when there's nothing beyond the dish itself. Verified against the real Anthropic call: "estaba buenísima aunque le faltaba sal" now lands in `description`; a bare "tostada con tomate" leaves it empty.
+
+## Check for stuff before saving a log in the database
+
+Sleep overlap already existed. Added the other three checks:
+
+- **Meal-type time window** (confirm): breakfast 05:00–11:00, lunch 12:00–16:00, dinner 19:00–23:00 (local time), snack exempt. Outside the window for the selected type shows a confirm dialog in MealForm.
+- **One breakfast/lunch/dinner per day** (alert, blocking): server-side check in `api/meals.ts` (`findExistingMealType`, mirrors `findOverlap`'s pattern), returns 409, MealForm shows a blocking alert. Snacks are unlimited. Verified directly against the DB, including the late-night day-boundary edge case (a 23:55 dinner doesn't collide with the next day's dinner).
+- **Future-time logging** (confirm, all 8 entry types): a shared `useConfirmDialog` hook (`src/hooks/useConfirmDialog.tsx`) plus `confirmIfFuture` (`src/lib/futureTime.ts`, 5-minute grace window) wired into every form's submit handler, checking each type's primary timestamp (eatenAt, startedAt, recordedAt, takenAt, wokeUpAt, occurredAt).

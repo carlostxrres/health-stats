@@ -5,6 +5,15 @@ import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { Field } from "@/components/forms/Field";
 import { PhotoUploader, type UploadedPhotoFile } from "@/components/forms/PhotoUploader";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,13 +24,32 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { apiClient } from "@/lib/api-client";
 import { isoToLocalInputValue, localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
+import { confirmIfFuture } from "@/lib/futureTime";
 
 const MEAL_TYPE_ITEMS = MEAL_TYPES.map((type) => ({
   value: type,
   label: MEAL_TYPE_LABELS[type],
 }));
+
+// Reasonable local-time windows (minutes since midnight) per meal type,
+// outside of which we ask the user to double-check — snacks have none,
+// they can happen whenever.
+const MEAL_TIME_WINDOWS: Partial<Record<(typeof MEAL_TYPES)[number], [number, number]>> = {
+  breakfast: [5 * 60, 11 * 60],
+  lunch: [12 * 60, 16 * 60],
+  dinner: [19 * 60, 23 * 60],
+};
+
+function isOutsideMealWindow(mealType: string, localValue: string): boolean {
+  const window = MEAL_TIME_WINDOWS[mealType as keyof typeof MEAL_TIME_WINDOWS];
+  if (!window) return false;
+  const [hours, minutes] = localValue.slice(11, 16).split(":").map(Number);
+  const minuteOfDay = hours * 60 + minutes;
+  return minuteOfDay < window[0] || minuteOfDay > window[1];
+}
 
 export type MealInitialData = {
   mealType: string;
@@ -57,6 +85,8 @@ export function MealForm({
   );
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
+  const { confirm, dialog } = useConfirmDialog();
 
   const {
     register,
@@ -116,6 +146,20 @@ export function MealForm({
       return;
     }
 
+    if (isOutsideMealWindow(values.mealType, values.eatenAtLocal)) {
+      const label = MEAL_TYPE_LABELS[values.mealType as (typeof MEAL_TYPES)[number]];
+      const time = values.eatenAtLocal.slice(11, 16);
+      const confirmed = await confirm({
+        title: `¿Seguro que es ${label.toLowerCase()}?`,
+        description: `Lo has registrado a las ${time}, fuera del horario habitual de ${label.toLowerCase()}. ¿Confirmas el tipo?`,
+        confirmLabel: "Sí, es correcto",
+        cancelLabel: "Revisar",
+      });
+      if (!confirmed) return;
+    }
+
+    if (!(await confirmIfFuture(confirm, parsed.data.eatenAt))) return;
+
     try {
       if (entryId) {
         await apiClient.patch(`/meals/${entryId}`, parsed.data);
@@ -135,6 +179,10 @@ export function MealForm({
         ingredients: [],
       });
     } catch (err) {
+      if (err instanceof Error && err.message === "DUPLICATE_MEAL_TYPE") {
+        setDuplicateDialogOpen(true);
+        return;
+      }
       setStatus("error");
       setErrorMessage(err instanceof Error ? err.message : "Error al guardar.");
     }
@@ -227,6 +275,25 @@ export function MealForm({
       <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Guardando…" : entryId ? "Guardar cambios" : "Guardar"}
       </Button>
+
+      {dialog}
+
+      <AlertDialog open={duplicateDialogOpen} onOpenChange={setDuplicateDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ya tienes esta comida registrada hoy</AlertDialogTitle>
+            <AlertDialogDescription>
+              Solo puede haber un desayuno, un almuerzo y una cena por día. Cambia el tipo o la
+              fecha para guardar este registro.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setDuplicateDialogOpen(false)}>
+              Entendido
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </form>
   );
 }

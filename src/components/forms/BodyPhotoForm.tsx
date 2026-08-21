@@ -7,8 +7,10 @@ import { PhotoUploader } from "@/components/forms/PhotoUploader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { apiClient } from "@/lib/api-client";
 import { isoToLocalInputValue, localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
+import { confirmIfFuture } from "@/lib/futureTime";
 
 export type BodyPhotoInitialData = {
   takenAt: string;
@@ -31,6 +33,7 @@ export function BodyPhotoForm({
   );
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { confirm, dialog } = useConfirmDialog();
 
   const {
     register,
@@ -61,6 +64,8 @@ export function BodyPhotoForm({
       setErrorMessage(parsed.error.issues[0]?.message ?? "Añade al menos una foto.");
       return;
     }
+
+    if (!(await confirmIfFuture(confirm, parsed.data.takenAt))) return;
 
     try {
       if (entryId) {
@@ -98,6 +103,8 @@ export function BodyPhotoForm({
       <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Guardando…" : entryId ? "Guardar cambios" : "Guardar"}
       </Button>
+
+      {dialog}
     </form>
   );
 }

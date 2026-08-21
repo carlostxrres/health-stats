@@ -16,8 +16,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { apiClient } from "@/lib/api-client";
 import { isoToLocalInputValue, localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
+import { confirmIfFuture } from "@/lib/futureTime";
 
 const WORKOUT_TYPE_ITEMS = WORKOUT_TYPES.map((t) => ({ value: t.code, label: t.label }));
 
@@ -55,6 +57,7 @@ export function WorkoutForm({
   );
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { confirm, dialog } = useConfirmDialog();
 
   const {
     register,
@@ -126,6 +129,8 @@ export function WorkoutForm({
       setErrorMessage(parsed.error.issues[0]?.message ?? "Datos inválidos.");
       return;
     }
+
+    if (!(await confirmIfFuture(confirm, parsed.data.startedAt))) return;
 
     try {
       if (entryId) {
@@ -294,6 +299,8 @@ export function WorkoutForm({
       <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Guardando…" : entryId ? "Guardar cambios" : "Guardar"}
       </Button>
+
+      {dialog}
     </form>
   );
 }

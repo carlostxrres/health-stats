@@ -20,8 +20,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { apiClient } from "@/lib/api-client";
 import { isoToLocalInputValue, localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
+import { confirmIfFuture } from "@/lib/futureTime";
 
 const METRIC_TYPE_ITEMS = METRIC_DEFINITIONS.map((m) => ({ value: m.code, label: m.label }));
 const BODY_SITE_ITEMS = BODY_SITES.map((site) => ({ value: site, label: BODY_SITE_LABELS[site] }));
@@ -54,6 +56,7 @@ export function MetricEntryForm({
   const navigate = useNavigate();
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { confirm, dialog } = useConfirmDialog();
 
   const {
     control,
@@ -105,6 +108,8 @@ export function MetricEntryForm({
       setErrorMessage(parsed.error.issues[0]?.message ?? "Datos inválidos.");
       return;
     }
+
+    if (!(await confirmIfFuture(confirm, parsed.data.recordedAt))) return;
 
     try {
       if (entryId) {
@@ -208,6 +213,8 @@ export function MetricEntryForm({
       <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Guardando…" : entryId ? "Guardar cambios" : "Guardar"}
       </Button>
+
+      {dialog}
     </form>
   );
 }

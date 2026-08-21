@@ -20,8 +20,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { apiClient } from "@/lib/api-client";
 import { isoToLocalInputValue, localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
+import { confirmIfFuture } from "@/lib/futureTime";
 
 const BRISTOL_ITEMS = BRISTOL_SCALE_VALUES.map((v) => ({
   value: String(v),
@@ -83,6 +85,7 @@ export function PoopEntryForm({
   );
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { confirm, dialog } = useConfirmDialog();
 
   const {
     register,
@@ -129,6 +132,8 @@ export function PoopEntryForm({
       setErrorMessage(parsed.error.issues[0]?.message ?? "Datos inválidos.");
       return;
     }
+
+    if (!(await confirmIfFuture(confirm, parsed.data.occurredAt))) return;
 
     try {
       if (entryId) {
@@ -252,6 +257,8 @@ export function PoopEntryForm({
       <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Guardando…" : entryId ? "Guardar cambios" : "Guardar"}
       </Button>
+
+      {dialog}
     </form>
   );
 }

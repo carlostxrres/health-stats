@@ -17,8 +17,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { apiClient } from "@/lib/api-client";
 import { isoToLocalInputValue, localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
+import { confirmIfFuture } from "@/lib/futureTime";
 
 const EPISODE_TYPE_ITEMS = HEALTH_EPISODE_TYPES.map((type) => ({
   value: type,
@@ -51,6 +53,7 @@ export function HealthEpisodeForm({
   const navigate = useNavigate();
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { confirm, dialog } = useConfirmDialog();
 
   const {
     register,
@@ -93,6 +96,8 @@ export function HealthEpisodeForm({
       setErrorMessage(parsed.error.issues[0]?.message ?? "Datos inválidos.");
       return;
     }
+
+    if (!(await confirmIfFuture(confirm, parsed.data.startedAt))) return;
 
     try {
       if (entryId) {
@@ -158,6 +163,8 @@ export function HealthEpisodeForm({
       <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Guardando…" : entryId ? "Guardar cambios" : "Guardar"}
       </Button>
+
+      {dialog}
     </form>
   );
 }

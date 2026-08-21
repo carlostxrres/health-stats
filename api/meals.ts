@@ -1,9 +1,28 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { and, desc, eq, gte, lt } from "drizzle-orm";
+import { and, desc, eq, gte, lt, lte, ne } from "drizzle-orm";
 import { mealIngredients, mealPhotos, meals } from "../db/schema/index.js";
 import { mealInputSchema } from "../shared/validation/index.js";
 import { db } from "./_lib/db.js";
 import { createHandler, parseLimit } from "./_lib/http.js";
+
+// breakfast/lunch/dinner are capped at one per calendar day; snacks are
+// unlimited. Day boundaries are derived from eatenAt's own offset (not a
+// stored column, unlike metric_entries.recordedDate) — same reasoning as
+// that column's comment: a session-timezone SQL cast could shift a
+// late-night entry into the wrong day.
+async function findExistingMealType(mealType: string, eatenAt: string, excludeId?: string) {
+  if (mealType === "snack") return undefined;
+  const day = eatenAt.slice(0, 10);
+  const offset = eatenAt.slice(-6);
+  return db.query.meals.findFirst({
+    where: and(
+      eq(meals.mealType, mealType),
+      gte(meals.eatenAt, `${day}T00:00:00${offset}`),
+      lte(meals.eatenAt, `${day}T23:59:59${offset}`),
+      excludeId ? ne(meals.id, excludeId) : undefined,
+    ),
+  });
+}
 
 async function list(req: VercelRequest, res: VercelResponse) {
   const from = typeof req.query.from === "string" ? req.query.from : undefined;
@@ -21,6 +40,11 @@ async function list(req: VercelRequest, res: VercelResponse) {
 
 async function create(req: VercelRequest, res: VercelResponse) {
   const input = mealInputSchema.parse(req.body);
+
+  if (await findExistingMealType(input.mealType, input.eatenAt)) {
+    res.status(409).json({ error: "DUPLICATE_MEAL_TYPE" });
+    return;
+  }
 
   const row = await db.transaction(async (tx) => {
     const [meal] = await tx
@@ -72,6 +96,11 @@ async function update(req: VercelRequest, res: VercelResponse) {
   }
 
   const input = mealInputSchema.parse(req.body);
+
+  if (await findExistingMealType(input.mealType, input.eatenAt, id)) {
+    res.status(409).json({ error: "DUPLICATE_MEAL_TYPE" });
+    return;
+  }
 
   const row = await db.transaction(async (tx) => {
     const [meal] = await tx

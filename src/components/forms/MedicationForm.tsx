@@ -5,8 +5,10 @@ import { useNavigate } from "react-router-dom";
 import { Field } from "@/components/forms/Field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { apiClient } from "@/lib/api-client";
 import { isoToLocalInputValue, localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
+import { confirmIfFuture } from "@/lib/futureTime";
 
 export type MedicationInitialData = {
   title: string;
@@ -26,6 +28,7 @@ export function MedicationForm({
   const navigate = useNavigate();
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { confirm, dialog } = useConfirmDialog();
 
   const {
     register,
@@ -57,6 +60,8 @@ export function MedicationForm({
       setErrorMessage(parsed.error.issues[0]?.message ?? "Datos inválidos.");
       return;
     }
+
+    if (!(await confirmIfFuture(confirm, parsed.data.takenAt))) return;
 
     try {
       if (entryId) {
@@ -93,6 +98,8 @@ export function MedicationForm({
       <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Guardando…" : entryId ? "Guardar cambios" : "Guardar"}
       </Button>
+
+      {dialog}
     </form>
   );
 }

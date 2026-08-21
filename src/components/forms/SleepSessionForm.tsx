@@ -16,8 +16,10 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { apiClient } from "@/lib/api-client";
 import { isoToLocalInputValue, localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
+import { confirmIfFuture } from "@/lib/futureTime";
 
 export type SleepSessionInitialData = {
   wentToBedAt: string;
@@ -48,6 +50,7 @@ export function SleepSessionForm({
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [overlapDialogOpen, setOverlapDialogOpen] = useState(false);
+  const { confirm, dialog } = useConfirmDialog();
 
   const {
     register,
@@ -93,6 +96,8 @@ export function SleepSessionForm({
       setErrorMessage(parsed.error.issues[0]?.message ?? "Datos inválidos.");
       return;
     }
+
+    if (!(await confirmIfFuture(confirm, parsed.data.wokeUpAt))) return;
 
     try {
       if (entryId) {
@@ -164,6 +169,8 @@ export function SleepSessionForm({
       <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Guardando…" : entryId ? "Guardar cambios" : "Guardar"}
       </Button>
+
+      {dialog}
 
       <AlertDialog open={overlapDialogOpen} onOpenChange={setOverlapDialogOpen}>
         <AlertDialogContent>
