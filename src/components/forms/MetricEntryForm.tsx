@@ -10,6 +10,7 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { Field } from "@/components/forms/Field";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -157,27 +158,29 @@ export function MetricEntryForm({
       </Field>
 
       {metricType === "weight" && (
-        <div className="flex flex-col gap-2 rounded-lg border p-3 text-sm text-muted-foreground">
-          <p>
-            Para que las mediciones sean comparables entre sí, elimina las fuentes de variación de
-            agua y contenido intestinal.
-          </p>
-          <ol className="list-decimal pl-5">
-            <li>Orina y evacúa antes (si tienes ganas —no hace falta forzarlo).</li>
-            <li>No comas o bebas antes.</li>
-            <li>No lleves ropa.</li>
-            <li>No estés mojado.</li>
-            <li>Misma báscula, mismo lugar.</li>
-          </ol>
-          <p>
-            Las variaciones por estos factores son despreciables comparadas con las fluctuaciones
-            normales de agua corporal:
-          </p>
-          <ul className="list-disc pl-5">
-            <li>Llevas reloj, gafas, calzoncillos o un cepillo de dientes.</li>
-            <li>Te has afeitado o cortado las uñas.</li>
-          </ul>
-        </div>
+        <Alert>
+          <AlertDescription>
+            <p>
+              Para que las mediciones sean comparables entre sí, elimina las fuentes de variación de
+              agua y contenido intestinal.
+            </p>
+            <ol className="list-decimal pl-5">
+              <li>Orina y evacúa antes (si tienes ganas —no hace falta forzarlo).</li>
+              <li>No comas o bebas antes.</li>
+              <li>No lleves ropa.</li>
+              <li>No estés mojado.</li>
+              <li>Misma báscula, mismo lugar.</li>
+            </ol>
+            <p>
+              Las variaciones por estos factores son despreciables comparadas con las fluctuaciones
+              normales de agua corporal:
+            </p>
+            <ul className="list-disc pl-5">
+              <li>Llevas reloj, gafas, calzoncillos o un cepillo de dientes.</li>
+              <li>Te has afeitado o cortado las uñas.</li>
+            </ul>
+          </AlertDescription>
+        </Alert>
       )}
 
       <div className="flex gap-3">
