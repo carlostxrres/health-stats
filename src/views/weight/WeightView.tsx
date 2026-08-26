@@ -20,6 +20,13 @@ import {
 } from "@/components/ui/chart";
 import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Toggle } from "@/components/ui/toggle";
 import { useSettings } from "@/hooks/useSettings";
 import { apiClient } from "@/lib/api-client";
@@ -27,6 +34,22 @@ import { bmiWeightThresholds } from "@/lib/bmi";
 import { loess } from "@/lib/loess";
 
 type WeightPoint = { x: number; y: number };
+
+type HourRange = "all" | "0-8" | "8-16" | "16-24";
+
+const HOUR_RANGE_ITEMS: { value: HourRange; label: string }[] = [
+  { value: "all", label: "Todas las horas" },
+  { value: "0-8", label: "De 0h a 8h" },
+  { value: "8-16", label: "De 8h a 16h" },
+  { value: "16-24", label: "De 16h a 0h" },
+];
+
+function isInHourRange(timestamp: number, range: HourRange): boolean {
+  if (range === "all") return true;
+  const hour = new Date(timestamp).getHours();
+  const [start, end] = range.split("-").map(Number);
+  return hour >= start && hour < end;
+}
 
 const chartConfig: ChartConfig = {
   weight: { label: "Peso", color: "var(--chart-1)" },
@@ -99,6 +122,7 @@ export function WeightView() {
   const [points, setPoints] = useState<WeightPoint[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showBmi, setShowBmi] = useState(false);
+  const [hourRange, setHourRange] = useState<HourRange>("all");
 
   useEffect(() => {
     let cancelled = false;
@@ -138,7 +162,8 @@ export function WeightView() {
     );
   }
 
-  const trend = loess(points);
+  const filteredPoints = points.filter((point) => isInHourRange(point.x, hourRange));
+  const trend = filteredPoints.length > 0 ? loess(filteredPoints) : [];
 
   const heightCm = settings?.heightCm != null ? Number(settings.heightCm) : null;
   const weightGoalMinKg =
@@ -148,7 +173,7 @@ export function WeightView() {
   const bmiThresholds = showBmi && heightCm != null ? bmiWeightThresholds(heightCm) : null;
 
   const domainValues = [
-    ...points.map((point) => point.y),
+    ...filteredPoints.map((point) => point.y),
     ...(weightGoalMinKg != null ? [weightGoalMinKg] : []),
     ...(weightGoalMaxKg != null ? [weightGoalMaxKg] : []),
     ...(bmiThresholds
@@ -211,155 +236,184 @@ export function WeightView() {
             </Popover>
           </div>
         </div>
-        <div className="flex flex-col items-start gap-1 pt-2">
-          <Toggle
-            pressed={showBmi}
-            onPressedChange={setShowBmi}
-            disabled={heightCm == null}
-            variant="outline"
+        <div className="flex flex-col items-end gap-2 pt-2">
+          <Select
+            items={HOUR_RANGE_ITEMS}
+            value={hourRange}
+            onValueChange={(v) => setHourRange(v as HourRange)}
           >
-            Mostrar IMC
-          </Toggle>
-          {heightCm == null && (
-            <p className="text-xs text-muted-foreground">
-              Añade tu altura en Ajustes para ver el IMC.
-            </p>
-          )}
+            <SelectTrigger className="w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {HOUR_RANGE_ITEMS.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="flex flex-col items-start gap-1">
+            <Toggle
+              pressed={showBmi}
+              onPressedChange={setShowBmi}
+              disabled={heightCm == null}
+              variant="outline"
+            >
+              Mostrar IMC
+            </Toggle>
+            {heightCm == null && (
+              <p className="text-xs text-muted-foreground">
+                Añade tu altura en Ajustes para ver el IMC.
+              </p>
+            )}
+          </div>
         </div>
       </div>
-      <ChartLegendContent config={activeConfig} />
-      <ChartContainer config={activeConfig} className="aspect-auto h-[60vh] w-full">
-        <ComposedChart margin={{ left: 8, right: 16, top: 12, bottom: 0 }}>
-          <CartesianGrid vertical={false} />
-          <XAxis
-            dataKey="x"
-            type="number"
-            domain={["dataMin", "dataMax"]}
-            ticks={getNiceDayTicks(points[0].x, points[points.length - 1].x)}
-            tickFormatter={formatAxisDate}
-            tickLine={false}
-            axisLine={false}
-            tickMargin={8}
-          />
-          <YAxis
-            dataKey="y"
-            type="number"
-            domain={yDomain}
-            padding={{ top: 20, bottom: 20 }}
-            tickLine={false}
-            axisLine={false}
-            tickMargin={8}
-            width={56}
-            tickFormatter={(value) => `${Math.round(value * 100) / 100} kg`}
-          />
-          <ChartTooltip
-            cursor={false}
-            content={({ active, label, payload }) => (
-              <ChartTooltipContent
-                active={active}
-                label={label}
-                payload={payload
-                  // Scatter reports both its x and y fields to the tooltip (it's a 2D
-                  // shape); we only want the weight value, not the raw x timestamp.
-                  ?.filter((item) => item.dataKey !== "x")
-                  // Scatter also ignores the `name` prop for its value entry and
-                  // labels it after the dataKey ("y") instead — rename it back so
-                  // the config lookup below resolves it to "Peso".
-                  .map((item) => (item.name === "y" ? { ...item, name: "weight" } : item))}
-                labelFormatter={(_, tooltipPayload) => {
-                  const x = tooltipPayload?.[0]?.payload?.x;
-                  return typeof x === "number" ? formatTooltipDate(x) : "";
-                }}
-                formatter={(value) => `${Number(value).toFixed(2)} kg`}
+      {filteredPoints.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          No hay registros de peso en esta franja horaria.
+        </p>
+      ) : (
+        <>
+          <ChartLegendContent config={activeConfig} />
+          <ChartContainer config={activeConfig} className="aspect-auto h-[60vh] w-full">
+            <ComposedChart margin={{ left: 8, right: 16, top: 12, bottom: 0 }}>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="x"
+                type="number"
+                domain={["dataMin", "dataMax"]}
+                ticks={getNiceDayTicks(
+                  filteredPoints[0].x,
+                  filteredPoints[filteredPoints.length - 1].x,
+                )}
+                tickFormatter={formatAxisDate}
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
               />
-            )}
-          />
-          <Scatter
-            name="weight"
-            data={points}
-            dataKey="y"
-            fill="var(--color-weight)"
-            shape={({ cx, cy }: { cx?: number; cy?: number }) =>
-              cx === undefined || cy === undefined ? null : (
-                <circle
-                  cx={cx}
-                  cy={cy}
-                  r={4}
-                  fill="var(--color-weight)"
-                  stroke="var(--background)"
-                  strokeWidth={2}
+              <YAxis
+                dataKey="y"
+                type="number"
+                domain={yDomain}
+                padding={{ top: 20, bottom: 20 }}
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                width={56}
+                tickFormatter={(value) => `${Math.round(value * 100) / 100} kg`}
+              />
+              <ChartTooltip
+                cursor={false}
+                content={({ active, label, payload }) => (
+                  <ChartTooltipContent
+                    active={active}
+                    label={label}
+                    payload={payload
+                      // Scatter reports both its x and y fields to the tooltip (it's a 2D
+                      // shape); we only want the weight value, not the raw x timestamp.
+                      ?.filter((item) => item.dataKey !== "x")
+                      // Scatter also ignores the `name` prop for its value entry and
+                      // labels it after the dataKey ("y") instead — rename it back so
+                      // the config lookup below resolves it to "Peso".
+                      .map((item) => (item.name === "y" ? { ...item, name: "weight" } : item))}
+                    labelFormatter={(_, tooltipPayload) => {
+                      const x = tooltipPayload?.[0]?.payload?.x;
+                      return typeof x === "number" ? formatTooltipDate(x) : "";
+                    }}
+                    formatter={(value) => `${Number(value).toFixed(2)} kg`}
+                  />
+                )}
+              />
+              <Scatter
+                name="weight"
+                data={filteredPoints}
+                dataKey="y"
+                fill="var(--color-weight)"
+                shape={({ cx, cy }: { cx?: number; cy?: number }) =>
+                  cx === undefined || cy === undefined ? null : (
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={4}
+                      fill="var(--color-weight)"
+                      stroke="var(--background)"
+                      strokeWidth={2}
+                    />
+                  )
+                }
+              />
+              <Line
+                name="trend"
+                data={trend}
+                dataKey="y"
+                type="monotone"
+                stroke="var(--color-trend)"
+                strokeWidth={2}
+                dot={false}
+                isAnimationActive={false}
+              />
+              {bmiThresholds && (
+                <>
+                  <ReferenceArea
+                    y1={yDomain[0]}
+                    y2={bmiThresholds.underweightMax}
+                    fill={BMI_BAND_COLORS.underweight}
+                    fillOpacity={0.15}
+                    strokeOpacity={0}
+                  />
+                  <ReferenceArea
+                    y1={bmiThresholds.underweightMax}
+                    y2={bmiThresholds.normalMax}
+                    fill={BMI_BAND_COLORS.normal}
+                    fillOpacity={0.15}
+                    strokeOpacity={0}
+                  />
+                  <ReferenceArea
+                    y1={bmiThresholds.normalMax}
+                    y2={bmiThresholds.overweightMax}
+                    fill={BMI_BAND_COLORS.overweight}
+                    fillOpacity={0.15}
+                    strokeOpacity={0}
+                  />
+                  <ReferenceArea
+                    y1={bmiThresholds.overweightMax}
+                    y2={yDomain[1]}
+                    fill={BMI_BAND_COLORS.obese}
+                    fillOpacity={0.15}
+                    strokeOpacity={0}
+                  />
+                </>
+              )}
+              {weightGoalMinKg != null && (
+                <ReferenceLine
+                  y={weightGoalMinKg}
+                  stroke="var(--chart-highlight)"
+                  strokeDasharray="4 4"
+                  label={{
+                    value: `Mín: ${weightGoalMinKg} kg`,
+                    position: "insideBottomRight",
+                    fontSize: 12,
+                  }}
                 />
-              )
-            }
-          />
-          <Line
-            name="trend"
-            data={trend}
-            dataKey="y"
-            type="monotone"
-            stroke="var(--color-trend)"
-            strokeWidth={2}
-            dot={false}
-            isAnimationActive={false}
-          />
-          {bmiThresholds && (
-            <>
-              <ReferenceArea
-                y1={yDomain[0]}
-                y2={bmiThresholds.underweightMax}
-                fill={BMI_BAND_COLORS.underweight}
-                fillOpacity={0.15}
-                strokeOpacity={0}
-              />
-              <ReferenceArea
-                y1={bmiThresholds.underweightMax}
-                y2={bmiThresholds.normalMax}
-                fill={BMI_BAND_COLORS.normal}
-                fillOpacity={0.15}
-                strokeOpacity={0}
-              />
-              <ReferenceArea
-                y1={bmiThresholds.normalMax}
-                y2={bmiThresholds.overweightMax}
-                fill={BMI_BAND_COLORS.overweight}
-                fillOpacity={0.15}
-                strokeOpacity={0}
-              />
-              <ReferenceArea
-                y1={bmiThresholds.overweightMax}
-                y2={yDomain[1]}
-                fill={BMI_BAND_COLORS.obese}
-                fillOpacity={0.15}
-                strokeOpacity={0}
-              />
-            </>
-          )}
-          {weightGoalMinKg != null && (
-            <ReferenceLine
-              y={weightGoalMinKg}
-              stroke="var(--chart-highlight)"
-              strokeDasharray="4 4"
-              label={{
-                value: `Mín: ${weightGoalMinKg} kg`,
-                position: "insideBottomRight",
-                fontSize: 12,
-              }}
-            />
-          )}
-          {weightGoalMaxKg != null && (
-            <ReferenceLine
-              y={weightGoalMaxKg}
-              stroke="var(--chart-highlight-2)"
-              strokeDasharray="4 4"
-              label={{
-                value: `Máx: ${weightGoalMaxKg} kg`,
-                position: "insideTopRight",
-                fontSize: 12,
-              }}
-            />
-          )}
-        </ComposedChart>
-      </ChartContainer>
+              )}
+              {weightGoalMaxKg != null && (
+                <ReferenceLine
+                  y={weightGoalMaxKg}
+                  stroke="var(--chart-highlight-2)"
+                  strokeDasharray="4 4"
+                  label={{
+                    value: `Máx: ${weightGoalMaxKg} kg`,
+                    position: "insideTopRight",
+                    fontSize: 12,
+                  }}
+                />
+              )}
+            </ComposedChart>
+          </ChartContainer>
+        </>
+      )}
     </div>
   );
 }
