@@ -96,7 +96,13 @@ function ScaleField({
       <RadioGroup value={value} onValueChange={onValueChange} className="flex flex-col gap-2">
         {values.map((v) => (
           <label key={v} htmlFor={`${id}-${v}`} className="flex items-center gap-2 text-sm">
-            <RadioGroupItem id={`${id}-${v}`} value={String(v)} />
+            <RadioGroupItem
+              id={`${id}-${v}`}
+              value={String(v)}
+              onClick={() => {
+                if (value === String(v)) onValueChange("");
+              }}
+            />
             {v} — {info[v].name}
           </label>
         ))}
