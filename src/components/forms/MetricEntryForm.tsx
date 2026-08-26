@@ -5,6 +5,7 @@ import {
   COMPOSITE_METRIC_CODES,
   METRIC_DEFINITIONS,
 } from "@shared/metricCatalog";
+import type { MetricEntry } from "@shared/types";
 import { metricEntryInputSchema } from "@shared/validation";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -25,6 +26,7 @@ import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { apiClient } from "@/lib/api-client";
 import { isoToLocalInputValue, localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
 import { confirmIfFuture } from "@/lib/futureTime";
+import { confirmIfUnreasonableWeight } from "@/lib/weightReasonableness";
 
 const METRIC_TYPE_ITEMS = METRIC_DEFINITIONS.map((m) => ({ value: m.code, label: m.label }));
 const BODY_SITE_ITEMS = BODY_SITES.map((site) => ({ value: site, label: BODY_SITE_LABELS[site] }));
@@ -108,6 +110,25 @@ export function MetricEntryForm({
       setStatus("error");
       setErrorMessage(parsed.error.issues[0]?.message ?? "Datos inválidos.");
       return;
+    }
+
+    if (parsed.data.metricType === "weight") {
+      const recent = await apiClient
+        .get<MetricEntry[]>(
+          `/metrics?metricType=weight&to=${encodeURIComponent(parsed.data.recordedAt)}&limit=5` +
+            (entryId ? `&excludeId=${entryId}` : ""),
+        )
+        .catch(() => []);
+      if (
+        !(await confirmIfUnreasonableWeight(
+          confirm,
+          parsed.data.value,
+          parsed.data.recordedAt,
+          recent,
+        ))
+      ) {
+        return;
+      }
     }
 
     if (!(await confirmIfFuture(confirm, parsed.data.recordedAt))) return;

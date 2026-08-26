@@ -1,10 +1,10 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, gte, lt, ne } from "drizzle-orm";
 import { metricEntries } from "../db/schema/index.js";
 import { METRIC_DEFINITIONS } from "../shared/metricCatalog.js";
 import { metricEntryInputSchema } from "../shared/validation/index.js";
 import { db } from "./_lib/db.js";
-import { createHandler } from "./_lib/http.js";
+import { createHandler, parseLimit } from "./_lib/http.js";
 import { isTypeHiddenFrom } from "./_lib/privacy.js";
 
 async function list(req: VercelRequest, res: VercelResponse) {
@@ -14,11 +14,20 @@ async function list(req: VercelRequest, res: VercelResponse) {
   }
 
   const metricType = typeof req.query.metricType === "string" ? req.query.metricType : undefined;
+  const from = typeof req.query.from === "string" ? req.query.from : undefined;
+  const to = typeof req.query.to === "string" ? req.query.to : undefined;
+  const excludeId = typeof req.query.excludeId === "string" ? req.query.excludeId : undefined;
+  const limit = parseLimit(req.query.limit, 100);
 
   const rows = await db.query.metricEntries.findMany({
-    where: metricType ? eq(metricEntries.metricType, metricType) : undefined,
+    where: and(
+      metricType ? eq(metricEntries.metricType, metricType) : undefined,
+      from ? gte(metricEntries.recordedAt, from) : undefined,
+      to ? lt(metricEntries.recordedAt, to) : undefined,
+      excludeId ? ne(metricEntries.id, excludeId) : undefined,
+    ),
     orderBy: desc(metricEntries.recordedAt),
-    limit: 100,
+    limit,
   });
   res.status(200).json(rows);
 }
