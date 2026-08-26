@@ -9,8 +9,8 @@ export const sleepSessions = pgTable(
     wentToBedAt: timestamp("went_to_bed_at", { withTimezone: true, mode: "string" }).notNull(),
     wokeUpAt: timestamp("woke_up_at", { withTimezone: true, mode: "string" }).notNull(),
     isNap: boolean("is_nap").notNull().default(false),
-    qualityRating: integer("quality_rating"), // subjective scale, 1-5
-    wakeFeeling: integer("wake_feeling"), // 1-5, per README
+    qualityRating: integer("quality_rating"), // subjective scale, 1-5 (see QUALITY_RATING_VALUES)
+    wakeFeeling: integer("wake_feeling"), // Karolinska Sleepiness Scale, 1-9 (see WAKE_FEELING_VALUES)
     notes: text("notes"),
     source: text("source")
       .notNull()

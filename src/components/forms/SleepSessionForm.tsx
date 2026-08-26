@@ -1,4 +1,15 @@
-import { sleepSessionInputSchema } from "@shared/validation";
+import {
+  QUALITY_RATING_INFO,
+  QUALITY_RATING_QUESTION,
+  QUALITY_RATING_SCALE_NOTE,
+  QUALITY_RATING_VALUES,
+  sleepSessionInputSchema,
+  WAKE_FEELING_INFO,
+  WAKE_FEELING_QUESTION,
+  WAKE_FEELING_SCALE_NOTE,
+  WAKE_FEELING_VALUES,
+} from "@shared/validation";
+import { Info } from "lucide-react";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
@@ -15,11 +26,85 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { apiClient } from "@/lib/api-client";
 import { isoToLocalInputValue, localInputToIso, nowAsLocalInputValue } from "@/lib/datetime";
 import { confirmIfFuture } from "@/lib/futureTime";
+
+function ScaleField({
+  id,
+  question,
+  scaleNote,
+  values,
+  info,
+  value,
+  onValueChange,
+}: {
+  id: string;
+  question: string;
+  scaleNote: string;
+  values: readonly number[];
+  info: Record<number, { name: string; description: string }>;
+  value: string;
+  onValueChange: (value: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-1.5">
+        <Label>{question}</Label>
+        <Popover>
+          <PopoverTrigger
+            render={
+              <button
+                type="button"
+                className="text-muted-foreground hover:text-foreground"
+                aria-label="Ver escala completa"
+              />
+            }
+          >
+            <Info className="size-4" />
+          </PopoverTrigger>
+          <PopoverContent className="w-80">
+            <PopoverHeader>
+              <PopoverTitle>{question}</PopoverTitle>
+              <PopoverDescription>{scaleNote}</PopoverDescription>
+            </PopoverHeader>
+            <ul className="flex max-h-80 flex-col gap-2 overflow-y-auto text-sm">
+              {values.map((v) => (
+                <li key={v}>
+                  <span className="font-medium">
+                    {v} — {info[v].name}
+                  </span>
+                  <p className="text-muted-foreground">{info[v].description}</p>
+                </li>
+              ))}
+            </ul>
+          </PopoverContent>
+        </Popover>
+      </div>
+      <RadioGroup value={value} onValueChange={onValueChange} className="flex flex-col gap-2">
+        {values.map((v) => (
+          <label key={v} htmlFor={`${id}-${v}`} className="flex items-center gap-2 text-sm">
+            <RadioGroupItem id={`${id}-${v}`} value={String(v)} />
+            {v} — {info[v].name}
+          </label>
+        ))}
+      </RadioGroup>
+      {value && <p className="text-sm text-muted-foreground">{info[Number(value)].description}</p>}
+    </div>
+  );
+}
 
 export type SleepSessionInitialData = {
   wentToBedAt: string;
@@ -151,12 +236,36 @@ export function SleepSessionForm({
         </label>
       </div>
 
-      <Field label="Calidad del sueño (1-5, opcional)">
-        <Input type="number" min={1} max={5} {...register("qualityRating")} />
-      </Field>
-      <Field label="Sensación al despertar (1-5, opcional)">
-        <Input type="number" min={1} max={5} {...register("wakeFeeling")} />
-      </Field>
+      <Controller
+        control={control}
+        name="qualityRating"
+        render={({ field }) => (
+          <ScaleField
+            id="quality-rating"
+            question={QUALITY_RATING_QUESTION}
+            scaleNote={QUALITY_RATING_SCALE_NOTE}
+            values={QUALITY_RATING_VALUES}
+            info={QUALITY_RATING_INFO}
+            value={field.value}
+            onValueChange={field.onChange}
+          />
+        )}
+      />
+      <Controller
+        control={control}
+        name="wakeFeeling"
+        render={({ field }) => (
+          <ScaleField
+            id="wake-feeling"
+            question={WAKE_FEELING_QUESTION}
+            scaleNote={WAKE_FEELING_SCALE_NOTE}
+            values={WAKE_FEELING_VALUES}
+            info={WAKE_FEELING_INFO}
+            value={field.value}
+            onValueChange={field.onChange}
+          />
+        )}
+      />
       <Field label="Notas (opcional)">
         <Textarea rows={2} {...register("notes")} />
       </Field>

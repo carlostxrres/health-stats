@@ -14,8 +14,12 @@ import {
   HEALTH_EPISODE_TYPES,
   MEAL_TYPE_LABELS,
   MEAL_TYPES,
+  QUALITY_RATING_INFO,
+  QUALITY_RATING_VALUES,
   STOOL_COLOR_LABELS,
   STOOL_COLORS,
+  WAKE_FEELING_INFO,
+  WAKE_FEELING_VALUES,
 } from "../../shared/validation/index.js";
 
 // Zod schemas that describe what the AI is allowed to extract from free text,
@@ -34,6 +38,14 @@ const episodeTypeDescription = HEALTH_EPISODE_TYPES.map(
   (t) => `${t} (${EPISODE_TYPE_LABELS[t]})`,
 ).join(", ");
 const stoolColorDescription = STOOL_COLORS.map((c) => `${c} (${STOOL_COLOR_LABELS[c]})`).join(", ");
+
+const qualityRatingDescription = QUALITY_RATING_VALUES.map(
+  (v) => `${v} (${QUALITY_RATING_INFO[v].name})`,
+).join(", ");
+
+const wakeFeelingDescription = WAKE_FEELING_VALUES.map(
+  (v) => `${v} (${WAKE_FEELING_INFO[v].name})`,
+).join(", ");
 const mealTypeDescription = MEAL_TYPES.map((t) => `${t} (${MEAL_TYPE_LABELS[t]})`).join(", ");
 
 const aiMetricSchema = z.object({
@@ -141,8 +153,24 @@ const aiSleepSchema = z.object({
     .optional()
     .describe("Hora de levantarse, ISO-8601 con offset. Omite si el texto no la menciona."),
   isNap: z.boolean().default(false).describe("true si es una siesta, no el sueño de la noche."),
-  qualityRating: z.number().int().min(1).max(5).optional(),
-  wakeFeeling: z.number().int().min(1).max(5).optional(),
+  qualityRating: z
+    .number()
+    .int()
+    .min(1)
+    .max(5)
+    .optional()
+    .describe(
+      `Calidad del sueño de esa noche (no cómo se siente al despertar). Valores: ${qualityRatingDescription}.`,
+    ),
+  wakeFeeling: z
+    .number()
+    .int()
+    .min(1)
+    .max(9)
+    .optional()
+    .describe(
+      `Nivel de somnolencia al despertar (Karolinska Sleepiness Scale). Valores: ${wakeFeelingDescription}.`,
+    ),
   notes: z.string().max(2000).optional(),
 });
 
