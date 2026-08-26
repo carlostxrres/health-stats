@@ -1,4 +1,5 @@
 import type { MetricEntry } from "@shared/types";
+import { Info } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   CartesianGrid,
@@ -18,6 +19,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Toggle } from "@/components/ui/toggle";
 import { useSettings } from "@/hooks/useSettings";
 import { apiClient } from "@/lib/api-client";
@@ -178,9 +180,36 @@ export function WeightView() {
       <div className="flex flex-wrap justify-between gap-2">
         <div>
           <h1 className="font-heading text-lg font-medium">Body weight (simple)</h1>
-          <p className="text-sm text-muted-foreground">
-            Cada punto es una medición registrada. La línea muestra la tendencia local.
-          </p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-sm text-muted-foreground">
+              Cada punto es una medición registrada. La línea muestra la tendencia local.
+            </p>
+            <Popover>
+              <PopoverTrigger
+                render={
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:text-foreground"
+                    aria-label="Sobre las variaciones de peso"
+                  />
+                }
+              >
+                <Info className="size-4" />
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                <p>
+                  No prestes demasiada atención al peso de un único día. Es normal ver variaciones
+                  de ±1 kg o ±2 kg de un día para otro simplemente por hidratación, cantidad de sal
+                  ingerida, glucógeno almacenado, o contenido gastrointestinal.
+                </p>
+                <p className="text-muted-foreground">
+                  La línea de tendencia usa un suavizado por regresión local (LOESS), no una media
+                  móvil de 7 días: se ajusta mejor cuando los registros no son diarios ni a la misma
+                  hora.
+                </p>
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
         <div className="flex flex-col items-start gap-1 pt-2">
           <Toggle
