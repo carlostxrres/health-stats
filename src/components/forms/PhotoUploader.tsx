@@ -23,7 +23,8 @@ type PendingPhoto = {
 };
 
 function filenameFromPath(path: string) {
-  return path.split("/").pop() ?? path;
+  const name = path.split("/").pop() ?? path;
+  return name.replace(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-/i, "");
 }
 
 export function PhotoUploader({
