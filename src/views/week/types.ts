@@ -5,40 +5,21 @@ import type {
   WorkoutWithDetails,
 } from "@shared/types";
 
+type WeekEventBase = {
+  id: string;
+  day: string;
+  range: [number, number];
+  startLabel: string;
+  endLabel: string;
+  // True when this row is only part of an event that straddles a day boundary,
+  // so `range`'s corresponding edge is a midnight cut and not the real
+  // start/end of the event.
+  continuesBefore: boolean;
+  continuesAfter: boolean;
+};
+
 export type WeekEventRow =
-  | {
-      id: string;
-      day: string;
-      range: [number, number];
-      startLabel: string;
-      endLabel: string;
-      kind: "sleep";
-      data: SleepSession;
-    }
-  | {
-      id: string;
-      day: string;
-      range: [number, number];
-      startLabel: string;
-      endLabel: string;
-      kind: "meal";
-      data: MealWithDetails;
-    }
-  | {
-      id: string;
-      day: string;
-      range: [number, number];
-      startLabel: string;
-      endLabel: string;
-      kind: "workout";
-      data: WorkoutWithDetails;
-    }
-  | {
-      id: string;
-      day: string;
-      range: [number, number];
-      startLabel: string;
-      endLabel: string;
-      kind: "poop";
-      data: PoopEntryWithPhotos;
-    };
+  | (WeekEventBase & { kind: "sleep"; data: SleepSession })
+  | (WeekEventBase & { kind: "meal"; data: MealWithDetails })
+  | (WeekEventBase & { kind: "workout"; data: WorkoutWithDetails })
+  | (WeekEventBase & { kind: "poop"; data: PoopEntryWithPhotos });

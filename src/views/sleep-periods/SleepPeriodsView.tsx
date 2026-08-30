@@ -86,8 +86,10 @@ export function SleepPeriodsView() {
         startLabel: formatBoundaryOffset(segment.range[0], boundaryHour),
         endLabel: formatBoundaryOffset(segment.range[1], boundaryHour),
         isNap: session.isNap,
-        isPartial: segments.length > 1,
+        isPartial: segment.continuesBefore || segment.continuesAfter,
         isWeekendEnd,
+        continuesBefore: segment.continuesBefore,
+        continuesAfter: segment.continuesAfter,
       }));
     });
 
@@ -120,6 +122,8 @@ export function SleepPeriodsView() {
       dayRows.forEach((sessionRow, index) => {
         row[`seg${index}`] = sessionRow.range;
         row[`seg${index}Weekend`] = sessionRow.isWeekendEnd;
+        row[`seg${index}ContinuesBefore`] = sessionRow.continuesBefore;
+        row[`seg${index}ContinuesAfter`] = sessionRow.continuesAfter;
       });
       return row;
     });

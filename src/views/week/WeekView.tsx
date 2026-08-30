@@ -66,6 +66,8 @@ export function WeekView() {
       dayRows.forEach((eventRow, index) => {
         row[`seg${index}`] = eventRow.range;
         row[`seg${index}Kind`] = eventRow.kind;
+        row[`seg${index}ContinuesBefore`] = eventRow.continuesBefore;
+        row[`seg${index}ContinuesAfter`] = eventRow.continuesAfter;
       });
       return row;
     });

@@ -40,10 +40,21 @@ const MIN_SEGMENT_HOURS = 1e-6; // guards against float noise re-triggering the 
 // single window still lands on the same day column regardless of
 // boundaryHour. Only periods that actually straddle a boundary spill their
 // earlier portion onto the preceding day(s).
+//
+// continuesBefore/continuesAfter report whether a segment was *clipped* by a
+// window edge rather than ending at the period's real start/end. Renderers
+// need this to tell a genuine start/end apart from a midnight cut: reading it
+// back off `range` (0 or 24) would misfire on a period that legitimately
+// begins or ends exactly at boundaryHour.
 export function splitByBoundaryDay(
   entry: { start: string; end: string },
   boundaryHour: number,
-): { day: string; range: [number, number] }[] {
+): {
+  day: string;
+  range: [number, number];
+  continuesBefore: boolean;
+  continuesAfter: boolean;
+}[] {
   const totalHours =
     (new Date(entry.end).getTime() - new Date(entry.start).getTime()) / (1000 * 60 * 60);
   let offset = hoursSinceBoundary(entry.start, boundaryHour);
@@ -59,5 +70,7 @@ export function splitByBoundaryDay(
   return ranges.map((range, index) => ({
     day: addDays(endDay, index - (ranges.length - 1)),
     range,
+    continuesBefore: index > 0,
+    continuesAfter: index < ranges.length - 1,
   }));
 }

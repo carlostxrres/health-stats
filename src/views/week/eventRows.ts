@@ -60,6 +60,8 @@ export async function fetchWeekEvents(weekDays: string[]): Promise<WeekEventRow[
         range: segment.range,
         startLabel: formatBoundaryOffset(segment.range[0], BOUNDARY_HOUR),
         endLabel: formatBoundaryOffset(segment.range[1], BOUNDARY_HOUR),
+        continuesBefore: segment.continuesBefore,
+        continuesAfter: segment.continuesAfter,
         kind: "sleep",
         data: session,
       });
@@ -78,6 +80,8 @@ export async function fetchWeekEvents(weekDays: string[]): Promise<WeekEventRow[
         range: segment.range,
         startLabel: formatBoundaryOffset(segment.range[0], BOUNDARY_HOUR),
         endLabel: formatBoundaryOffset(segment.range[1], BOUNDARY_HOUR),
+        continuesBefore: segment.continuesBefore,
+        continuesAfter: segment.continuesAfter,
         kind: "meal",
         data: meal,
       });
@@ -97,6 +101,8 @@ export async function fetchWeekEvents(weekDays: string[]): Promise<WeekEventRow[
         range: segment.range,
         startLabel: formatBoundaryOffset(segment.range[0], BOUNDARY_HOUR),
         endLabel: formatBoundaryOffset(segment.range[1], BOUNDARY_HOUR),
+        continuesBefore: segment.continuesBefore,
+        continuesAfter: segment.continuesAfter,
         kind: "workout",
         data: workout,
       });
@@ -116,6 +122,8 @@ export async function fetchWeekEvents(weekDays: string[]): Promise<WeekEventRow[
         range: segment.range,
         startLabel: formatBoundaryOffset(segment.range[0], BOUNDARY_HOUR),
         endLabel: formatBoundaryOffset(segment.range[1], BOUNDARY_HOUR),
+        continuesBefore: segment.continuesBefore,
+        continuesAfter: segment.continuesAfter,
         kind: "poop",
         data: entry,
       });
